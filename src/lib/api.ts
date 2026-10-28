@@ -63,6 +63,8 @@ export interface Snapshot {
   label: string;
   entries: unknown[];
   rolled_back: boolean;
+  /** What was changed: tweak ids, or "game:<option>:<exe>". */
+  notes: string[];
 }
 
 export interface TweakInfo {
@@ -115,6 +117,15 @@ export interface UpdateStatus {
 
 export const BOOST_EVENT = "zanrei://boost";
 export const UPDATE_EVENT = "zanrei://update";
+export const LOG_EVENT = "zanrei://log";
+
+export type LogLevel = "Info" | "Warn" | "Error";
+export interface LogEntry {
+  ts: number;
+  level: LogLevel;
+  source: string;
+  message: string;
+}
 
 export const api = {
   detectSystem: () => invoke<SystemInfo>("detect_system"),
@@ -136,6 +147,7 @@ export const api = {
   restartNow: (seconds: number) => invoke<void>("restart_now", { seconds }),
   cancelRestart: () => invoke<void>("cancel_restart"),
   restartExplorer: () => invoke<void>("restart_explorer"),
+  signOut: () => invoke<void>("sign_out"),
   cleanTemp: () => invoke<number>("clean_temp"),
   listGames: () => invoke<GameInfo[]>("list_games"),
   setGameOption: (exe: string, option: GameOption, enabled: boolean) =>
@@ -143,6 +155,9 @@ export const api = {
   addCustomGame: (name: string, exe: string) => invoke<void>("add_custom_game", { name, exe }),
   removeCustomGame: (exe: string) => invoke<void>("remove_custom_game", { exe }),
   boostStatus: () => invoke<BoostStatus>("boost_status"),
+  getLogs: () => invoke<LogEntry[]>("get_logs"),
+  clearLogs: () => invoke<void>("clear_logs"),
+  openLogFolder: () => invoke<void>("open_log_folder"),
   updateStatus: () => invoke<UpdateStatus>("update_status"),
   checkUpdate: () => invoke<UpdateStatus>("check_update"),
   installUpdate: () => invoke<void>("install_update"),

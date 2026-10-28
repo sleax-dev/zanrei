@@ -1,8 +1,11 @@
+mod logs;
+
+use logs::{Level, Logger};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashSet,
     path::PathBuf,
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{Arc, Mutex, MutexGuard, OnceLock},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use sysinfo::{Disks, ProcessesToUpdate, System};
@@ -30,6 +33,7 @@ type Res<T> = Result<T, String>;
 const SESSION_MAX_AGE_SECS: u64 = 24 * 60 * 60;
 const BOOST_EVENT: &str = "zanrei://boost";
 const UPDATE_EVENT: &str = "zanrei://update";
+const LOG_EVENT: &str = "zanrei://log";
 const UPDATE_CHECK_EVERY: Duration = Duration::from_secs(6 * 60 * 60);
 
 struct Inner {
@@ -48,6 +52,9 @@ struct Inner {
     games: Mutex<Vec<Game>>,
     boost: Mutex<BoostStatus>,
     tray: Mutex<Option<TrayIcon>>,
+    log: Logger,
+    /// Set once the app exists; lets any thread push a log line to the UI.
+    app: OnceLock<AppHandle>,
     update: Mutex<UpdateStatus>,
     /// The release found by the last check; installing needs the exact object.
     pending_update: Mutex<Option<tauri_plugin_updater::Update>>,
@@ -68,6 +75,13 @@ fn now_unix() -> u64 {
 }
 
 impl Inner {
+    fn log(&self, level: Level, source: &str, message: impl AsRef<str>) {
+        let entry = self.log.push(level, source, message.as_ref());
+        if let Some(app) = self.app.get() {
+            let _ = app.emit(LOG_EVENT, entry);
+        }
+    }
+
     fn detect(&self) -> SystemInfo {
         let info = system::detect(&*self.platform);
         *lock(&self.system) = Some(info.clone());
@@ -88,6 +102,7 @@ impl Inner {
             return Ok(id.clone());
         }
         let snap = self.store.create(&*self.platform, "Zanrei")?;
+        self.log(Level::Info, "restore", "Restore point created for this session");
         *session = Some((snap.id.clone(), snap.created_unix));
         Ok(snap.id)
     }
@@ -124,10 +139,16 @@ impl Inner {
             if enabled {
                 let sid = self.ensure_session()?;
                 tweaks::apply(&self.store, &*self.platform, &sid, t, build)?;
+                let _ = self.store.note(&sid, id);
             } else {
                 tweaks::revert(&*self.platform, t)?;
             }
         }
+        self.log(
+            Level::Info,
+            "tweaks",
+            format!("{} {id}", if enabled { "Applied" } else { "Reverted" }),
+        );
         self.note_restart(t.restart);
         self.update_settings(|s| {
             s.user_disabled.retain(|x| x != id);
@@ -157,12 +178,24 @@ impl Inner {
             // set_tweak records "switched off by hand" only for enabled=false, so this stays clean.
             match self.set_tweak(t.id, true) {
                 Ok(_) => report.applied.push(t.id.to_string()),
-                Err(e) => report.failed.push(Failure {
-                    id: t.id.to_string(),
-                    error: e.to_string(),
-                }),
+                Err(e) => {
+                    self.log(Level::Error, "tweaks", format!("{}: {e}", t.id));
+                    report.failed.push(Failure {
+                        id: t.id.to_string(),
+                        error: e.to_string(),
+                    });
+                }
             }
         }
+        self.log(
+            Level::Info,
+            "tweaks",
+            format!(
+                "Recommended settings: {} applied, {} failed",
+                report.applied.len(),
+                report.failed.len()
+            ),
+        );
         report
     }
 
@@ -236,41 +269,51 @@ struct Preferences {
 
 async fn with<T: Send + 'static>(
     state: &State<'_, AppState>,
+    name: &'static str,
     f: impl FnOnce(&Inner) -> CoreResult<T> + Send + 'static,
 ) -> Res<T> {
     let s = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || f(&s.0))
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        let result = f(&s.0);
+        if let Err(e) = &result {
+            s.0.log(Level::Error, name, e.to_string());
+        }
+        result
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())
 }
 
 // ---- system and restore
 
 #[tauri::command]
 async fn detect_system(s: State<'_, AppState>) -> Res<SystemInfo> {
-    with(&s, |i| Ok(i.detect())).await
+    with(&s, "detect_system", |i| Ok(i.detect())).await
 }
 
 #[tauri::command]
 async fn list_snapshots(s: State<'_, AppState>) -> Res<Vec<Snapshot>> {
-    with(&s, |i| Ok(i.store.list())).await
+    with(&s, "list_snapshots", |i| Ok(i.store.list())).await
 }
 
 #[tauri::command]
 async fn create_snapshot(s: State<'_, AppState>, label: String) -> Res<Snapshot> {
-    with(&s, move |i| {
+    with(&s, "create_snapshot", move |i| {
         let _guard = lock(&i.change_lock);
-        i.store.create(&*i.platform, &label)
+        let snap = i.store.create(&*i.platform, &label)?;
+        i.log(Level::Info, "restore", format!("Restore point created: {label}"));
+        Ok(snap)
     })
     .await
 }
 
 #[tauri::command]
 async fn rollback_snapshot(s: State<'_, AppState>, id: String) -> Res<()> {
-    with(&s, move |i| {
+    with(&s, "rollback_snapshot", move |i| {
         let _guard = lock(&i.change_lock);
         i.store.rollback(&*i.platform, &id)?;
+        i.log(Level::Info, "restore", format!("Rolled back restore point {id}"));
         // Whatever was undone may need the same follow-up as when it was applied.
         i.note_restart(Restart::Reboot);
         Ok(())
@@ -280,36 +323,45 @@ async fn rollback_snapshot(s: State<'_, AppState>, id: String) -> Res<()> {
 
 #[tauri::command]
 async fn open_system_restore(s: State<'_, AppState>) -> Res<()> {
-    with(&s, |i| i.platform.open_system_restore()).await
+    with(&s, "open_system_restore", |i| i.platform.open_system_restore()).await
 }
 
 // ---- tweaks
 
 #[tauri::command]
 async fn list_tweaks(s: State<'_, AppState>) -> Res<Vec<TweakInfo>> {
-    with(&s, |i| Ok(i.list_tweaks())).await
+    with(&s, "list_tweaks", |i| Ok(i.list_tweaks())).await
 }
 
 #[tauri::command]
 async fn set_tweak(s: State<'_, AppState>, id: String, enabled: bool) -> Res<TweakInfo> {
-    with(&s, move |i| i.set_tweak(&id, enabled)).await
+    with(&s, "set_tweak", move |i| i.set_tweak(&id, enabled)).await
 }
 
 #[tauri::command]
 async fn apply_recommended(s: State<'_, AppState>, include_moderate: bool) -> Res<ApplyReport> {
-    with(&s, move |i| Ok(i.apply_recommended(include_moderate))).await
+    with(&s, "apply_recommended", move |i| {
+        Ok(i.apply_recommended(include_moderate))
+    })
+    .await
 }
 
 #[tauri::command]
 async fn clean_temp(s: State<'_, AppState>) -> Res<u64> {
-    with(&s, |_| {
+    with(&s, "clean_temp", |i| {
         let age = Duration::from_secs(3600);
         let win_temp = std::env::var_os("SystemRoot").map(|r| PathBuf::from(r).join("Temp"));
-        Ok([Some(std::env::temp_dir()), win_temp]
+        let freed: u64 = [Some(std::env::temp_dir()), win_temp]
             .into_iter()
             .flatten()
             .map(|d| cleanup::clean_dir(&d, age))
-            .sum())
+            .sum();
+        i.log(
+            Level::Info,
+            "cleanup",
+            format!("Freed {} KB of temporary files", freed / 1024),
+        );
+        Ok(freed)
     })
     .await
 }
@@ -323,18 +375,42 @@ fn pending_restart(s: State<'_, AppState>) -> Restart {
 
 #[tauri::command]
 async fn restart_now(s: State<'_, AppState>, seconds: u32) -> Res<()> {
-    with(&s, move |i| power::restart(&*i.platform, seconds)).await
+    with(&s, "restart_now", move |i| {
+        power::restart(&*i.platform, seconds)?;
+        i.log(
+            Level::Info,
+            "system",
+            format!("Windows restart scheduled in {seconds} s"),
+        );
+        Ok(())
+    })
+    .await
 }
 
 #[tauri::command]
 async fn cancel_restart(s: State<'_, AppState>) -> Res<()> {
-    with(&s, |i| power::cancel_restart(&*i.platform)).await
+    with(&s, "cancel_restart", |i| {
+        power::cancel_restart(&*i.platform)?;
+        i.log(Level::Info, "system", "Scheduled restart cancelled");
+        Ok(())
+    })
+    .await
+}
+
+#[tauri::command]
+async fn sign_out(s: State<'_, AppState>) -> Res<()> {
+    with(&s, "sign_out", |i| {
+        i.log(Level::Info, "system", "Signing out of Windows");
+        i.platform.run("shutdown", &["/l"]).map(|_| ())
+    })
+    .await
 }
 
 #[tauri::command]
 async fn restart_explorer(s: State<'_, AppState>) -> Res<()> {
-    with(&s, |i| {
+    with(&s, "restart_explorer", |i| {
         power::restart_explorer(&*i.platform)?;
+        i.log(Level::Info, "system", "File Explorer restarted");
         let mut p = lock(&i.pending_restart);
         if *p == Restart::Explorer {
             *p = Restart::None;
@@ -348,7 +424,7 @@ async fn restart_explorer(s: State<'_, AppState>) -> Res<()> {
 
 #[tauri::command]
 async fn list_games(s: State<'_, AppState>) -> Res<Vec<GameInfo>> {
-    with(&s, |i| {
+    with(&s, "list_games", |i| {
         Ok(i.refresh_games()
             .into_iter()
             .map(|game| {
@@ -362,10 +438,16 @@ async fn list_games(s: State<'_, AppState>) -> Res<Vec<GameInfo>> {
 
 #[tauri::command]
 async fn set_game_option(s: State<'_, AppState>, exe: String, option: GameOption, enabled: bool) -> Res<GameOptions> {
-    with(&s, move |i| {
+    with(&s, "set_game_option", move |i| {
         let _guard = lock(&i.change_lock);
         let sid = i.ensure_session()?;
         games::set_option(&i.store, &*i.platform, &sid, &exe, option, enabled)?;
+        let _ = i.store.note(&sid, &format!("game:{option:?}:{exe}"));
+        i.log(
+            Level::Info,
+            "games",
+            format!("{option:?} {} for {exe}", if enabled { "on" } else { "off" }),
+        );
         games::options(&*i.platform, &exe)
     })
     .await
@@ -373,7 +455,7 @@ async fn set_game_option(s: State<'_, AppState>, exe: String, option: GameOption
 
 #[tauri::command]
 async fn add_custom_game(s: State<'_, AppState>, name: String, exe: String) -> Res<()> {
-    with(&s, move |i| {
+    with(&s, "add_custom_game", move |i| {
         i.update_settings(|st| {
             if !st.custom_games.iter().any(|g| g.exe.eq_ignore_ascii_case(&exe)) {
                 st.custom_games.push(games::CustomGame { name, exe });
@@ -386,7 +468,7 @@ async fn add_custom_game(s: State<'_, AppState>, name: String, exe: String) -> R
 
 #[tauri::command]
 async fn remove_custom_game(s: State<'_, AppState>, exe: String) -> Res<()> {
-    with(&s, move |i| {
+    with(&s, "remove_custom_game", move |i| {
         i.update_settings(|st| st.custom_games.retain(|g| !g.exe.eq_ignore_ascii_case(&exe)))
             .map(|_| ())
     })
@@ -409,7 +491,7 @@ fn get_settings(s: State<'_, AppState>) -> Settings {
 async fn save_preferences(app: AppHandle, s: State<'_, AppState>, prefs: Preferences) -> Res<()> {
     let old_lang = lock(&s.0.settings).language.clone();
     let new_lang = prefs.language.clone();
-    with(&s, move |i| {
+    with(&s, "save_preferences", move |i| {
         i.update_settings(|st| {
             st.language = prefs.language;
             st.setup_done = prefs.setup_done;
@@ -434,14 +516,20 @@ fn mica_enabled(s: State<'_, AppState>) -> bool {
 
 #[tauri::command]
 async fn get_autostart(s: State<'_, AppState>) -> Res<bool> {
-    with(&s, |i| Ok(autostart::enabled(&*i.platform))).await
+    with(&s, "get_autostart", |i| Ok(autostart::enabled(&*i.platform))).await
 }
 
 #[tauri::command]
 async fn set_autostart(s: State<'_, AppState>, enabled: bool) -> Res<()> {
-    with(&s, move |i| {
+    with(&s, "set_autostart", move |i| {
         let exe = std::env::current_exe()?;
-        autostart::set(&*i.platform, &exe.to_string_lossy(), enabled)
+        autostart::set(&*i.platform, &exe.to_string_lossy(), enabled)?;
+        i.log(
+            Level::Info,
+            "system",
+            format!("Start with Windows {}", if enabled { "on" } else { "off" }),
+        );
+        Ok(())
     })
     .await
 }
@@ -461,6 +549,28 @@ fn send_to_background(app: AppHandle, s: State<'_, AppState>) {
 #[tauri::command]
 fn quit_app(app: AppHandle) {
     app.exit(0);
+}
+
+// ---- logs
+
+#[tauri::command]
+fn get_logs(s: State<'_, AppState>) -> Vec<logs::Entry> {
+    s.0.log.entries()
+}
+
+#[tauri::command]
+fn clear_logs(s: State<'_, AppState>) {
+    s.0.log.clear();
+}
+
+#[tauri::command]
+fn open_log_folder(app: AppHandle, s: State<'_, AppState>) -> Res<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let dir = s.0.log.dir().to_path_buf();
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    app.opener()
+        .open_path(dir.to_string_lossy(), None::<&str>)
+        .map_err(|e| e.to_string())
 }
 
 // ---- window, tray
@@ -555,6 +665,10 @@ async fn check_update_inner(app: &AppHandle, s: &Inner) -> UpdateStatus {
     };
     match found {
         Ok(update) => {
+            match &update {
+                Some(u) => s.log(Level::Info, "updater", format!("Version {} is available", u.version)),
+                None => s.log(Level::Info, "updater", "Checked for updates: up to date"),
+            }
             let info = update.as_ref().map(|u| UpdateInfo {
                 version: u.version.clone(),
                 notes: u.body.clone(),
@@ -567,10 +681,22 @@ async fn check_update_inner(app: &AppHandle, s: &Inner) -> UpdateStatus {
                 u.last_checked_unix = Some(now_unix());
             });
         }
-        Err(e) => set_update(app, s, |u| {
-            u.checking = false;
-            u.error = Some(e.to_string());
-        }),
+        // No latest.json published yet (a release built without the signing key): nothing to offer, not a failure.
+        Err(tauri_plugin_updater::Error::ReleaseNotFound) => {
+            s.log(Level::Info, "updater", "No update information has been published yet");
+            set_update(app, s, |u| {
+                u.available = None;
+                u.checking = false;
+                u.last_checked_unix = Some(now_unix());
+            });
+        }
+        Err(e) => {
+            s.log(Level::Warn, "updater", format!("Update check failed: {e}"));
+            set_update(app, s, |u| {
+                u.checking = false;
+                u.error = Some(e.to_string());
+            });
+        }
     }
     lock(&s.update).clone()
 }
@@ -585,6 +711,11 @@ async fn install_update_inner(app: &AppHandle, s: &Inner) -> Result<(), String> 
         u.total = None;
         u.error = None;
     });
+    s.log(
+        Level::Info,
+        "updater",
+        format!("Downloading version {}", update.version),
+    );
     let (mut downloaded, mut reported) = (0u64, 0u64);
     let result = update
         .download_and_install(
@@ -612,6 +743,7 @@ async fn install_update_inner(app: &AppHandle, s: &Inner) -> Result<(), String> 
         }
         Err(e) => {
             let msg = e.to_string();
+            s.log(Level::Error, "updater", format!("Installing the update failed: {msg}"));
             set_update(app, s, |u| {
                 u.installing = false;
                 u.error = Some(msg.clone());
@@ -662,10 +794,14 @@ fn spawn_updater(app: AppHandle, state: AppState) {
 
 /// While a known game is running, the high-performance power plan is active; the previous plan is
 /// written to the settings first so a crash can never leave the PC stuck on it.
-fn boost_tick(app: &AppHandle, s: &Inner, running: Option<String>) {
+fn boost_tick(app: &AppHandle, s: &Inner, running: Option<String>, failed: &mut Option<String>) {
     let want = lock(&s.settings).game_boost && running.is_some();
+    // Do not retry (and spam the log) for a game we already failed to boost.
+    if running.is_none() || *failed != running {
+        *failed = None;
+    }
     let mut status = lock(&s.boost);
-    let changed = match (want, status.active) {
+    let changed = match (want && failed.is_none(), status.active) {
         (true, false) => {
             let activated = power::active_scheme(&*s.platform).and_then(|prev| {
                 if prev != power::HIGH_PERFORMANCE {
@@ -674,16 +810,29 @@ fn boost_tick(app: &AppHandle, s: &Inner, running: Option<String>) {
                 }
                 Ok(())
             });
-            if activated.is_ok() {
-                *status = BoostStatus {
-                    active: true,
-                    game: running,
-                };
+            match activated {
+                Ok(()) => {
+                    s.log(
+                        Level::Info,
+                        "boost",
+                        format!("Game Boost on: {}", running.as_deref().unwrap_or("?")),
+                    );
+                    *status = BoostStatus {
+                        active: true,
+                        game: running,
+                    };
+                    true
+                }
+                Err(e) => {
+                    s.log(Level::Warn, "boost", format!("Could not switch the power plan: {e}"));
+                    *failed = running;
+                    false
+                }
             }
-            activated.is_ok()
         }
         (false, true) => {
             restore_boost(s);
+            s.log(Level::Info, "boost", "Game Boost off, power plan restored");
             *status = BoostStatus::default();
             true
         }
@@ -708,6 +857,7 @@ fn spawn_boost_watcher(app: AppHandle, state: AppState) {
         let mut sys = System::new();
         let mut known: HashSet<String> = HashSet::new();
         let mut scanned: Option<Instant> = None;
+        let mut failed: Option<String> = None;
         loop {
             std::thread::sleep(Duration::from_secs(5));
             let s = &state.0;
@@ -725,7 +875,7 @@ fn spawn_boost_watcher(app: AppHandle, state: AppState) {
                     .values()
                     .map(|p| p.name().to_string_lossy().into_owned()),
             );
-            boost_tick(&app, s, running);
+            boost_tick(&app, s, running, &mut failed);
         }
     });
 }
@@ -750,6 +900,7 @@ pub fn run() {
 
             let dir = app.path().app_data_dir()?;
             let loaded = settings::load(&dir);
+            let log_dir = dir.join("logs");
             let state = AppState(Arc::new(Inner {
                 platform: platform::current(),
                 store: Store::new(dir.clone()),
@@ -763,6 +914,8 @@ pub fn run() {
                 games: Mutex::new(vec![]),
                 boost: Mutex::new(BoostStatus::default()),
                 tray: Mutex::new(None),
+                log: Logger::new(log_dir),
+                app: OnceLock::new(),
                 update: Mutex::new(UpdateStatus {
                     current: app.package_info().version.to_string(),
                     ..UpdateStatus::default()
@@ -770,6 +923,22 @@ pub fn run() {
                 pending_update: Mutex::new(None),
             }));
             app.manage(state.clone());
+            let _ = state.0.app.set(app.handle().clone());
+
+            // A crash that is not caught anywhere else still leaves a line in the log.
+            let for_panics = state.clone();
+            std::panic::set_hook(Box::new(move |info| {
+                for_panics.0.log(Level::Error, "panic", info.to_string())
+            }));
+            state.0.log(
+                Level::Info,
+                "app",
+                format!(
+                    "Zanrei {} started{}",
+                    app.package_info().version,
+                    if background { " in the background" } else { "" }
+                ),
+            );
 
             // A previous run may have died while Game Boost was active.
             restore_boost(&state.0);
@@ -818,6 +987,7 @@ pub fn run() {
             restart_now,
             cancel_restart,
             restart_explorer,
+            sign_out,
             list_games,
             set_game_option,
             add_custom_game,
@@ -830,6 +1000,9 @@ pub fn run() {
             set_autostart,
             send_to_background,
             quit_app,
+            get_logs,
+            clear_logs,
+            open_log_folder,
             update_status,
             check_update,
             install_update,

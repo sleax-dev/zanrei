@@ -1,59 +1,78 @@
 import type { DeepPartial, Locale } from "./en";
 
+// Translated: the interface core. Anything missing here (newer screens, tweak descriptions) falls back to English.
 export default {
-  common: { next: "Weiter", back: "Zurück", finish: "Fertig", retry: "Erneut versuchen", cancel: "Abbrechen", confirm: "Bestätigen", close: "Schließen", loading: "Wird geladen…", search: "Suchen" },
-  setup: {
-    language: { title: "Sprache wählen", desc: "Du kannst das später in den Einstellungen ändern." },
-    scan: {
-      title: "Dein PC wird geprüft",
-      desc: "Zanrei sieht sich deine Hardware an, um passende Einstellungen vorzuschlagen. Es wird nichts geändert.",
-      working: "Wird gescannt…",
-      failed: "Der Scan ist fehlgeschlagen.",
-    },
-    restore: {
-      title: "Sicherheitsnetz erstellen",
-      desc: "Bevor Zanrei etwas ändert, erstellt es einen Windows-Wiederherstellungspunkt. Jede Änderung lässt sich in der App rückgängig machen.",
-      create: "Wiederherstellungspunkt erstellen",
-      creating: "Wiederherstellungspunkt wird erstellt…",
-      done: "Wiederherstellungspunkt erstellt.",
-      failed: "Der Wiederherstellungspunkt konnte nicht erstellt werden. Ohne ihn ändert Zanrei nichts.",
-    },
-    mode: {
-      title: "Wie viel soll Zanrei übernehmen?",
-      desc: "Du kannst das jederzeit ändern.",
-      manual: { name: "Manuell", desc: "Nichts passiert, solange du es nicht auswählst." },
-      recommended: { name: "Empfohlen", desc: "Zanrei schlägt sichere Verbesserungen vor, du bestätigst jede einzeln." },
-      auto: { name: "Automatisch", desc: "Zanrei wendet sichere Verbesserungen selbst an, immer nach dem Erstellen eines Wiederherstellungspunkts." },
-    },
-    done: { title: "Alles bereit", desc: "Zanrei ist startklar.", start: "Zanrei öffnen" },
+  "common": {
+    "next": "Weiter",
+    "back": "Zurück",
+    "finish": "Fertig",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "close": "Schließen",
+    "loading": "Wird geladen…",
+    "search": "Suchen"
   },
-  nav: { overview: "Übersicht", restore: "Wiederherstellen", settings: "Einstellungen", optimize: "Optimieren", games: "Spiele" },
-  titlebar: { background: "In den Hintergrund" },
-  overview: {
-    title: "Dein PC",
-    cpu: "Prozessor",
-    ram: "Arbeitsspeicher",
-    gpu: "Grafik",
-    storage: "Speicher",
-    os: "System",
-    noGpu: "Keine Grafikkarte erkannt",
-    cores: "{{physical}} Kerne / {{logical}} Threads",
-    tierLabel: "Leistungsklasse",
-    tier: { Legacy: "Älterer PC", Mainstream: "Mittelklasse-PC", High: "Hochleistungs-PC" },
+  "setup": {
+    "scan": {
+      "working": "Wird gescannt…"
+    },
+    "mode": {
+      "title": "Wie viel soll Zanrei übernehmen?",
+      "desc": "Du kannst das jederzeit ändern.",
+      "manual": {
+        "name": "Manuell",
+        "desc": "Nichts passiert, solange du es nicht auswählst."
+      },
+      "recommended": {
+        "name": "Empfohlen",
+        "desc": "Zanrei schlägt sichere Verbesserungen vor, du bestätigst jede einzeln."
+      },
+      "auto": {
+        "name": "Automatisch",
+        "desc": "Zanrei wendet sichere Verbesserungen selbst an, immer nach dem Erstellen eines Wiederherstellungspunkts."
+      }
+    },
+    "done": {
+      "title": "Alles bereit",
+      "start": "Zanrei öffnen"
+    }
   },
-  restore: {
-    title: "Wiederherstellen",
-    desc: "Jede Änderung von Zanrei wird hier gespeichert und kann rückgängig gemacht werden.",
-    empty: "Noch keine Wiederherstellungspunkte.",
-    create: "Wiederherstellungspunkt erstellen",
-    creating: "Wird erstellt…",
-    rollback: "Rückgängig",
-    rolledBack: "Rückgängig gemacht",
-    changes: "Änderungen: {{count}}",
-    openSystem: "Windows-Systemwiederherstellung öffnen",
-    confirmTitle: "Diesen Wiederherstellungspunkt rückgängig machen?",
-    confirmBody: "Alle in diesem Punkt gespeicherten Änderungen werden zurückgesetzt.",
-    failed: "Etwas ist schiefgelaufen",
+  "nav": {
+    "overview": "Übersicht",
+    "restore": "Wiederherstellen",
+    "settings": "Einstellungen"
   },
-  settings: { title: "Einstellungen", language: "Sprache" },
+  "titlebar": {
+    "background": "In den Hintergrund"
+  },
+  "overview": {
+    "title": "Dein PC",
+    "cpu": "Prozessor",
+    "ram": "Arbeitsspeicher",
+    "gpu": "Grafik",
+    "storage": "Speicher",
+    "os": "System",
+    "noGpu": "Keine Grafikkarte erkannt",
+    "cores": "{{physical}} Kerne / {{logical}} Threads",
+    "tier": {
+      "Legacy": "Älterer PC",
+      "Mainstream": "Mittelklasse-PC",
+      "High": "Hochleistungs-PC"
+    }
+  },
+  "restore": {
+    "empty": "Noch keine Wiederherstellungspunkte.",
+    "create": "Wiederherstellungspunkt erstellen",
+    "creating": "Wird erstellt…",
+    "rollback": "Rückgängig",
+    "rolledBack": "Rückgängig gemacht",
+    "openSystem": "Windows-Systemwiederherstellung öffnen",
+    "confirmTitle": "Diesen Wiederherstellungspunkt rückgängig machen?",
+    "confirmBody": "Alle in diesem Punkt gespeicherten Änderungen werden zurückgesetzt.",
+    "failed": "Etwas ist schiefgelaufen"
+  },
+  "settings": {
+    "language": "Sprache"
+  }
 } satisfies DeepPartial<Locale>;

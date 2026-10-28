@@ -2,7 +2,23 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] - Unreleased
+## [0.3.0] - Unreleased
+
+### Added
+- Activity log page with live updates, level filter, search, copy and open-folder; a rotating log file on disk; crashes are logged.
+- Navigation split into sections: one page per optimization group, a Library and a Graphics page for games, and Restore and Logs under Tools. Each group shows how many of its settings are on.
+- Three-step first run: a ticked list of recommended settings applied with one button (safe ones pre-selected), then Automatic mode.
+- Restore points now say what they contain (expandable list), and the undo dialog names the settings it will put back.
+- A restore-point strip in the sidebar so the way back is always on screen.
+- Settings that were already configured before Zanrei, including Windows defaults such as Game Mode, are read from Windows and shown correctly; the window re-reads them on focus.
+- The restart notice is docked under the page, says which settings caused it, and offers Explorer restart, sign-out and restart.
+
+### Changed
+- Redesigned interface: flat surfaces instead of icon tiles and glow, distinct icons that fill when active, orange kept for actions and "on" states only, plural-aware text, dates without seconds.
+- Error notifications stay until dismissed and link to the log.
+- Updater: a release without update information is reported as "up to date" instead of an error.
+
+## [0.2.0] - 2026-10-28
 
 ### Added
 - Optimization catalog: about 40 reversible settings in six groups, each with a risk level, live state, a "recommended for your PC" hint and clear restart guidance (restart, sign out or restart Explorer).

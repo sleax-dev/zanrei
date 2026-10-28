@@ -1,59 +1,78 @@
 import type { DeepPartial, Locale } from "./en";
 
+// Translated: the interface core. Anything missing here (newer screens, tweak descriptions) falls back to English.
 export default {
-  common: { next: "下一步", back: "上一步", finish: "完成", retry: "重试", cancel: "取消", confirm: "确认", close: "关闭", loading: "正在加载…", search: "搜索" },
-  setup: {
-    language: { title: "选择语言", desc: "你可以稍后在设置中更改。" },
-    scan: {
-      title: "正在检查你的电脑",
-      desc: "Zanrei 会查看你的硬件，以便推荐合适的设置。不会更改任何内容。",
-      working: "正在扫描…",
-      failed: "扫描失败。",
-    },
-    restore: {
-      title: "创建安全保障",
-      desc: "在更改任何内容之前，Zanrei 会先创建一个 Windows 还原点。所有更改都可以在应用内撤销。",
-      create: "创建还原点",
-      creating: "正在创建还原点…",
-      done: "还原点已创建。",
-      failed: "无法创建还原点。没有还原点，Zanrei 不会更改任何内容。",
-    },
-    mode: {
-      title: "让 Zanrei 做多少？",
-      desc: "你可以随时更改。",
-      manual: { name: "手动", desc: "除非你选择，否则不会执行任何操作。" },
-      recommended: { name: "推荐", desc: "Zanrei 建议安全的优化，由你逐项确认。" },
-      auto: { name: "自动", desc: "Zanrei 自动应用安全的优化，并且始终先创建还原点。" },
-    },
-    done: { title: "一切就绪", desc: "Zanrei 已准备好。", start: "打开 Zanrei" },
+  "common": {
+    "next": "下一步",
+    "back": "上一步",
+    "finish": "完成",
+    "retry": "重试",
+    "cancel": "取消",
+    "confirm": "确认",
+    "close": "关闭",
+    "loading": "正在加载…",
+    "search": "搜索"
   },
-  nav: { overview: "概览", restore: "还原", settings: "设置", optimize: "优化", games: "游戏" },
-  titlebar: { background: "转入后台" },
-  overview: {
-    title: "你的电脑",
-    cpu: "处理器",
-    ram: "内存",
-    gpu: "显卡",
-    storage: "存储",
-    os: "系统",
-    noGpu: "未检测到显卡",
-    cores: "{{physical}} 核 / {{logical}} 线程",
-    tierLabel: "性能等级",
-    tier: { Legacy: "老旧电脑", Mainstream: "主流电脑", High: "高性能电脑" },
+  "setup": {
+    "scan": {
+      "working": "正在扫描…"
+    },
+    "mode": {
+      "title": "让 Zanrei 做多少？",
+      "desc": "你可以随时更改。",
+      "manual": {
+        "name": "手动",
+        "desc": "除非你选择，否则不会执行任何操作。"
+      },
+      "recommended": {
+        "name": "推荐",
+        "desc": "Zanrei 建议安全的优化，由你逐项确认。"
+      },
+      "auto": {
+        "name": "自动",
+        "desc": "Zanrei 自动应用安全的优化，并且始终先创建还原点。"
+      }
+    },
+    "done": {
+      "title": "一切就绪",
+      "start": "打开 Zanrei"
+    }
   },
-  restore: {
-    title: "还原",
-    desc: "Zanrei 所做的每项更改都会保存在这里，并且可以撤销。",
-    empty: "还没有还原点。",
-    create: "创建还原点",
-    creating: "正在创建…",
-    rollback: "撤销",
-    rolledBack: "已撤销",
-    changes: "更改数：{{count}}",
-    openSystem: "打开 Windows 系统还原",
-    confirmTitle: "撤销此还原点？",
-    confirmBody: "此还原点中保存的所有更改都将被还原。",
-    failed: "出了点问题",
+  "nav": {
+    "overview": "概览",
+    "restore": "还原",
+    "settings": "设置"
   },
-  settings: { title: "设置", language: "语言" },
+  "titlebar": {
+    "background": "转入后台"
+  },
+  "overview": {
+    "title": "你的电脑",
+    "cpu": "处理器",
+    "ram": "内存",
+    "gpu": "显卡",
+    "storage": "存储",
+    "os": "系统",
+    "noGpu": "未检测到显卡",
+    "cores": "{{physical}} 核 / {{logical}} 线程",
+    "tier": {
+      "Legacy": "老旧电脑",
+      "Mainstream": "主流电脑",
+      "High": "高性能电脑"
+    }
+  },
+  "restore": {
+    "empty": "还没有还原点。",
+    "create": "创建还原点",
+    "creating": "正在创建…",
+    "rollback": "撤销",
+    "rolledBack": "已撤销",
+    "openSystem": "打开 Windows 系统还原",
+    "confirmTitle": "撤销此还原点？",
+    "confirmBody": "此还原点中保存的所有更改都将被还原。",
+    "failed": "出了点问题"
+  },
+  "settings": {
+    "language": "语言"
+  }
 } satisfies DeepPartial<Locale>;

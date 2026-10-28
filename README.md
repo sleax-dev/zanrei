@@ -12,14 +12,16 @@ Zanrei looks at your PC's hardware, works out what can be improved, and only cha
 
 ## Features
 
-- **Guided setup.** Pick your language, review what Zanrei found on your PC, create your first restore point and choose how much Zanrei may do on its own.
-- **Optimizations you can switch on and off one by one.** About 40 settings in six groups (privacy, performance, gaming, interface, system, cleanup). Each one has a plain-language description and a risk level: **safe**, **moderate** or **advanced**. A switch reflects what Windows is actually set to right now. Zanrei marks the ones that suit your hardware as *recommended*.
+- **Three-step setup.** Welcome, then a list of what suits your PC (safe settings are already ticked, the rest are offered), then done. One button applies them, after a restore point is made.
+- **Optimizations you can switch on and off one by one.** About 40 settings in six groups (privacy, performance, gaming, interface, system, cleanup). Each one has a plain-language description and a risk level: **safe**, **moderate** or **advanced**. A switch always reflects what Windows is set to right now, so a setting someone changed earlier, or another tool changed, shows up as on or off. Zanrei looks again whenever you come back to the window. Zanrei marks the ones that suit your hardware as *recommended*.
 - **Restart only when needed.** If a change needs a restart, a sign-out or an Explorer restart, Zanrei says so and offers a button for exactly that, with a countdown you can cancel.
 - **Games and graphics.** Zanrei finds games from Steam, Epic Games, GOG, Ubisoft Connect, the EA app and the Xbox app, and lets you add any other game. Per game you can run it on the high-performance GPU, turn off fullscreen optimizations and start it with higher CPU priority. Graphics card, driver version and driver age are shown with a link to the vendor's driver page.
 - **Game Boost.** While a game is running, Zanrei switches Windows to the high-performance power plan and puts your previous plan back when the game closes.
 - **Runs in the background.** Closing the window sends Zanrei to the system tray. It can start with Windows (without a UAC prompt) and both behaviours can be turned off in Settings.
 - **Remove Microsoft Edge** and **remove pre-installed apps** (Candy Crush, Solitaire, TikTok and similar; Xbox, Store, Photos and Calculator are never touched). Both are advanced options and are described in detail before you use them.
 - **Cleanup tool.** Frees temporary files that nothing is using.
+- **Activity log.** Everything Zanrei changes, and everything that goes wrong, with a copy button and a link to the log folder for when you need to ask for help.
+- **Organised by what you want to do.** Privacy, performance, gaming, Windows and cleanup each have their own page; games and graphics sit in their own section.
 - **Automatic updates.** Zanrei checks for a new version at start-up and every few hours, downloads it and installs it. Update packages are cryptographically signed; Zanrei refuses anything that is not. You can switch to manual updates in Settings.
 - **Windows 11 look and feel.** Fluent UI, the Mica backdrop on Windows 11 and a clean dark theme on Windows 10.
 - **10 languages.** English, Türkçe, Español, Deutsch, Français, Português, Русский, 简体中文, 日本語 and العربية (right-to-left supported). The language follows your Windows language and can be changed at any time.

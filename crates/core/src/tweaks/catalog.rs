@@ -83,6 +83,7 @@ fn t(
         min_build: 0,
         recommended,
         reversible: true,
+        default_applied: false,
         actions,
     }
 }
@@ -164,6 +165,7 @@ fn build() -> Vec<Tweak> {
         min_build: 0,
         recommended: NONE,
         reversible: true,
+        default_applied: false,
         actions: vec![
             // Stops Edge Update from putting the browser back; WebView2 has its own id and is untouched.
             dword(
@@ -184,6 +186,7 @@ fn build() -> Vec<Tweak> {
         min_build: 0,
         recommended: NONE,
         reversible: false,
+        default_applied: false,
         actions: vec![Action::RemoveBloatApps],
     };
 
@@ -471,17 +474,21 @@ fn build() -> Vec<Tweak> {
             vec![Action::HighPerformancePlan],
         ),
         // ---- Gaming
-        t(
-            "game_mode",
-            Gaming,
-            Safe,
-            R::None,
-            ALL,
-            vec![
-                dword(Hkcu, r"Software\Microsoft\GameBar", "AutoGameModeEnabled", 1, None),
-                dword(Hkcu, r"Software\Microsoft\GameBar", "AllowAutoGameMode", 1, None),
-            ],
-        ),
+        // Windows ships with Game Mode on, so a PC that never touched the values counts as "on".
+        Tweak {
+            default_applied: true,
+            ..t(
+                "game_mode",
+                Gaming,
+                Safe,
+                R::None,
+                ALL,
+                vec![
+                    dword(Hkcu, r"Software\Microsoft\GameBar", "AutoGameModeEnabled", 1, Some(0)),
+                    dword(Hkcu, r"Software\Microsoft\GameBar", "AllowAutoGameMode", 1, Some(0)),
+                ],
+            )
+        },
         t(
             "game_dvr",
             Gaming,

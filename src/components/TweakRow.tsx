@@ -1,11 +1,23 @@
 import { Spinner, Switch } from "@fluentui/react-components";
-import { useState } from "react";
+import { ArrowSync16Regular, ErrorCircle16Regular, Warning16Regular } from "@fluentui/react-icons";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TweakInfo } from "../lib/api";
 import { useApp } from "../state";
 import { Confirm } from "./Confirm";
 
-export const RISK_PILL = { Safe: "ok", Moderate: "warn", Advanced: "bad" } as const;
+type Flag = { tone: "" | "warn" | "bad"; icon: ReactNode; text: string };
+
+/** Only what a person must weigh is shown: risk above Safe, a restart, an irreversible change. Safe is the default and says nothing. */
+function flagsFor(x: TweakInfo, t: (k: string) => string): Flag[] {
+  const flags: Flag[] = [];
+  if (x.risk !== "Safe") flags.push({ tone: x.risk === "Advanced" ? "bad" : "warn", icon: <Warning16Regular />, text: t(`optimize.risk.${x.risk}`) });
+  if (!x.reversible) flags.push({ tone: "bad", icon: <ErrorCircle16Regular />, text: t("optimize.irreversible") });
+  if (x.restart !== "None") flags.push({ tone: "", icon: <ArrowSync16Regular />, text: t(`optimize.needs.${x.restart}`) });
+  if (x.state === "Partial") flags.push({ tone: "warn", icon: <Warning16Regular />, text: t("optimize.partial") });
+  if (x.state === "Unavailable") flags.push({ tone: "", icon: null, text: t("optimize.unavailable") });
+  return flags;
+}
 
 export function TweakRow({ tweak }: { tweak: TweakInfo }) {
   const { t } = useTranslation();
@@ -15,6 +27,7 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
   const on = tweak.state === "Applied";
   const unavailable = tweak.state === "Unavailable";
   const locked = working || unavailable || (on && !tweak.reversible);
+  const flags = flagsFor(tweak, t);
 
   const toggle = (enable: boolean) => {
     if (enable && tweak.risk !== "Safe") setAsk(true);
@@ -26,14 +39,13 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
       <div className="info">
         <div className="name">{t(`tweaks.${tweak.id}.name`)}</div>
         <div className="desc">{t(`tweaks.${tweak.id}.desc`)}</div>
-        <div className="meta">
-          <span className={`pill ${RISK_PILL[tweak.risk]}`}>{t(`optimize.risk.${tweak.risk}`)}</span>
-          {tweak.recommended && <span className="pill accent">{t("optimize.recommended")}</span>}
-          {tweak.restart !== "None" && <span className="pill">{t(`optimize.needs.${tweak.restart}`)}</span>}
-          {!tweak.reversible && <span className="pill bad">{t("optimize.irreversible")}</span>}
-          {tweak.state === "Partial" && <span className="pill warn">{t("optimize.partial")}</span>}
-          {unavailable && <span className="pill">{t("optimize.unavailable")}</span>}
-        </div>
+        {flags.length > 0 && (
+          <div className="flags">
+            {flags.map((f) => (
+              <span key={f.text} className={`flag ${f.tone}`}>{f.icon}{f.text}</span>
+            ))}
+          </div>
+        )}
       </div>
       <div className="ctl">
         {working && <Spinner size="tiny" />}

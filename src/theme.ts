@@ -21,6 +21,8 @@ export const theme: Theme = {
   colorNeutralBackground3: "#0B0B10",
   colorNeutralForeground1: "#F4F1EA",
   colorNeutralForeground2: "#D9D6CF",
+  colorNeutralForeground3: "#C4C1BA",
+  colorNeutralStrokeAccessible: "#B8B5AE",
   colorBrandBackground: ORANGE,
   colorBrandBackgroundHover: ORANGE_HOVER,
   colorBrandBackgroundPressed: ORANGE_PRESSED,

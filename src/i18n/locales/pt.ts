@@ -1,59 +1,78 @@
 import type { DeepPartial, Locale } from "./en";
 
+// Translated: the interface core. Anything missing here (newer screens, tweak descriptions) falls back to English.
 export default {
-  common: { next: "Avançar", back: "Voltar", finish: "Concluir", retry: "Tentar novamente", cancel: "Cancelar", confirm: "Confirmar", close: "Fechar", loading: "Carregando…", search: "Pesquisar" },
-  setup: {
-    language: { title: "Escolha seu idioma", desc: "Você pode mudar isso depois em Configurações." },
-    scan: {
-      title: "Verificando seu PC",
-      desc: "O Zanrei analisa seu hardware para sugerir as configurações certas. Nada é alterado.",
-      working: "Verificando…",
-      failed: "A verificação falhou.",
-    },
-    restore: {
-      title: "Crie uma rede de segurança",
-      desc: "Antes de alterar qualquer coisa, o Zanrei cria um ponto de restauração do Windows. Toda alteração pode ser desfeita dentro do app.",
-      create: "Criar ponto de restauração",
-      creating: "Criando ponto de restauração…",
-      done: "Ponto de restauração criado.",
-      failed: "Não foi possível criar um ponto de restauração. O Zanrei não altera nada sem ele.",
-    },
-    mode: {
-      title: "Quanto o Zanrei deve fazer?",
-      desc: "Você pode mudar isso a qualquer momento.",
-      manual: { name: "Manual", desc: "Nada acontece a menos que você escolha." },
-      recommended: { name: "Recomendado", desc: "O Zanrei sugere melhorias seguras e você confirma cada uma." },
-      auto: { name: "Automático", desc: "O Zanrei aplica melhorias seguras sozinho, sempre depois de criar um ponto de restauração." },
-    },
-    done: { title: "Tudo pronto", desc: "O Zanrei está pronto.", start: "Abrir o Zanrei" },
+  "common": {
+    "next": "Avançar",
+    "back": "Voltar",
+    "finish": "Concluir",
+    "retry": "Tentar novamente",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "close": "Fechar",
+    "loading": "Carregando…",
+    "search": "Pesquisar"
   },
-  nav: { overview: "Visão geral", restore: "Restaurar", settings: "Configurações", optimize: "Otimizar", games: "Jogos" },
-  titlebar: { background: "Enviar para segundo plano" },
-  overview: {
-    title: "Seu PC",
-    cpu: "Processador",
-    ram: "Memória",
-    gpu: "Placa de vídeo",
-    storage: "Armazenamento",
-    os: "Sistema",
-    noGpu: "Nenhuma placa de vídeo detectada",
-    cores: "{{physical}} núcleos / {{logical}} threads",
-    tierLabel: "Classe de desempenho",
-    tier: { Legacy: "PC antigo", Mainstream: "PC intermediário", High: "PC de alto desempenho" },
+  "setup": {
+    "scan": {
+      "working": "Verificando…"
+    },
+    "mode": {
+      "title": "Quanto o Zanrei deve fazer?",
+      "desc": "Você pode mudar isso a qualquer momento.",
+      "manual": {
+        "name": "Manual",
+        "desc": "Nada acontece a menos que você escolha."
+      },
+      "recommended": {
+        "name": "Recomendado",
+        "desc": "O Zanrei sugere melhorias seguras e você confirma cada uma."
+      },
+      "auto": {
+        "name": "Automático",
+        "desc": "O Zanrei aplica melhorias seguras sozinho, sempre depois de criar um ponto de restauração."
+      }
+    },
+    "done": {
+      "title": "Tudo pronto",
+      "start": "Abrir o Zanrei"
+    }
   },
-  restore: {
-    title: "Restaurar",
-    desc: "Toda alteração feita pelo Zanrei é salva aqui e pode ser desfeita.",
-    empty: "Ainda não há pontos de restauração.",
-    create: "Criar ponto de restauração",
-    creating: "Criando…",
-    rollback: "Desfazer",
-    rolledBack: "Desfeito",
-    changes: "Alterações: {{count}}",
-    openSystem: "Abrir Restauração do Sistema do Windows",
-    confirmTitle: "Desfazer este ponto de restauração?",
-    confirmBody: "Todas as alterações salvas neste ponto serão revertidas.",
-    failed: "Algo deu errado",
+  "nav": {
+    "overview": "Visão geral",
+    "restore": "Restaurar",
+    "settings": "Configurações"
   },
-  settings: { title: "Configurações", language: "Idioma" },
+  "titlebar": {
+    "background": "Enviar para segundo plano"
+  },
+  "overview": {
+    "title": "Seu PC",
+    "cpu": "Processador",
+    "ram": "Memória",
+    "gpu": "Placa de vídeo",
+    "storage": "Armazenamento",
+    "os": "Sistema",
+    "noGpu": "Nenhuma placa de vídeo detectada",
+    "cores": "{{physical}} núcleos / {{logical}} threads",
+    "tier": {
+      "Legacy": "PC antigo",
+      "Mainstream": "PC intermediário",
+      "High": "PC de alto desempenho"
+    }
+  },
+  "restore": {
+    "empty": "Ainda não há pontos de restauração.",
+    "create": "Criar ponto de restauração",
+    "creating": "Criando…",
+    "rollback": "Desfazer",
+    "rolledBack": "Desfeito",
+    "openSystem": "Abrir Restauração do Sistema do Windows",
+    "confirmTitle": "Desfazer este ponto de restauração?",
+    "confirmBody": "Todas as alterações salvas neste ponto serão revertidas.",
+    "failed": "Algo deu errado"
+  },
+  "settings": {
+    "language": "Idioma"
+  }
 } satisfies DeepPartial<Locale>;

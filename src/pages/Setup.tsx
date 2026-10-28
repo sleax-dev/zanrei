@@ -1,167 +1,200 @@
-import { Button, MessageBar, MessageBarBody, ProgressBar } from "@fluentui/react-components";
-import { ShieldCheckmark24Regular } from "@fluentui/react-icons";
+import { Button, Checkbox, MessageBar, MessageBarBody, ProgressBar, Spinner } from "@fluentui/react-components";
+import { CheckmarkCircle20Regular, ShieldCheckmark20Regular, Warning16Regular } from "@fluentui/react-icons";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HardwareTiles } from "../components/Hardware";
 import { LanguagePicker } from "../components/LanguagePicker";
-import { ModeCards } from "../components/ModeCards";
-import { api, errorText, type Mode, type SystemInfo } from "../lib/api";
+import { Logo } from "../components/Logo";
+import { PcSummary } from "../components/PcSummary";
+import { TitleBar } from "../components/TitleBar";
 import { isRtl, pickLang } from "../i18n";
 import { useApp } from "../state";
-import { TitleBar } from "../components/TitleBar";
 
-const STEPS = ["language", "scan", "restore", "mode", "done"] as const;
-type Step = (typeof STEPS)[number];
+type Step = "welcome" | "recommend" | "done";
+const STEPS: Step[] = ["welcome", "recommend", "done"];
 
+/** Three steps: hello, here is what suits your PC (ticked, one button), done. The mandatory restore point is made by the first change. */
 export function Setup() {
   const { t, i18n } = useTranslation();
-  const { settings, savePrefs, applyRecommended } = useApp();
-  const [i, setI] = useState(0);
-  const [dir, setDir] = useState(1);
-  const [mode, setMode] = useState<Mode>(settings.mode);
-  const [restoreOk, setRestoreOk] = useState(false);
-  const step: Step = STEPS[i];
+  const { savePrefs } = useApp();
+  const [step, setStep] = useState<Step>("welcome");
+  const [applied, setApplied] = useState(0);
   const lang = pickLang(i18n.language);
+  const i = STEPS.indexOf(step);
 
-  const go = (d: number) => {
-    setDir(d);
-    setI((x) => x + d);
-  };
-
-  const finish = async () => {
-    await savePrefs({ language: lang, setup_done: true, mode });
-    if (mode === "Auto") void applyRecommended(false);
-  };
+  const finish = () => void savePrefs({ language: lang, setup_done: true, mode: applied > 0 ? "Auto" : "Recommended" });
 
   return (
     <>
       <TitleBar />
       <div className="setup">
         <div className="setup-card">
-          <div className="steps" aria-hidden>
+          <div className="steps" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={i + 1} aria-label={t("setup.progress", { current: i + 1, total: STEPS.length })}>
             {STEPS.map((x, n) => <i key={x} className={n <= i ? "on" : ""} />)}
           </div>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
-              initial={{ opacity: 0, x: 24 * dir * (isRtl(lang) ? -1 : 1) }}
+              initial={{ opacity: 0, x: 20 * (isRtl(lang) ? -1 : 1) }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
+              transition={{ duration: 0.16 }}
               className="stack"
-              style={{ gap: 14 }}
+              style={{ gap: 16, flex: 1 }}
             >
-              {step === "language" && (
-                <>
-                  <h2>{t("setup.language.title")}</h2>
-                  <p>{t("setup.language.desc")}</p>
-                  <LanguagePicker />
-                </>
-              )}
-              {step === "scan" && <ScanStep />}
-              {step === "restore" && <RestoreStep ok={restoreOk} onOk={() => setRestoreOk(true)} />}
-              {step === "mode" && (
-                <>
-                  <h2>{t("setup.mode.title")}</h2>
-                  <p>{t("setup.mode.desc")}</p>
-                  <ModeCards value={mode} onChange={setMode} />
-                </>
-              )}
-              {step === "done" && (
-                <>
-                  <h2>{t("setup.done.title")}</h2>
-                  <p>{mode === "Auto" ? t("setup.done.descAuto") : t("setup.done.desc")}</p>
-                </>
-              )}
+              {step === "welcome" && <Welcome onNext={() => setStep("recommend")} />}
+              {step === "recommend" && <Recommend onBack={() => setStep("welcome")} onDone={(n) => { setApplied(n); setStep("done"); }} />}
+              {step === "done" && <Done applied={applied} onFinish={finish} />}
             </motion.div>
           </AnimatePresence>
-          <div className="setup-foot">
-            <Button appearance="subtle" disabled={i === 0 || step === "done"} onClick={() => go(-1)}>{t("common.back")}</Button>
-            {step === "done" ? (
-              <Button appearance="primary" onClick={() => void finish()}>{t("setup.done.start")}</Button>
-            ) : (
-              <Button appearance="primary" disabled={step === "restore" && !restoreOk} onClick={() => go(1)}>{t("common.next")}</Button>
-            )}
-          </div>
         </div>
       </div>
     </>
   );
 }
 
-function ScanStep() {
+function Welcome({ onNext }: { onNext: () => void }) {
   const { t } = useTranslation();
-  const [info, setInfo] = useState<SystemInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [run, setRun] = useState(0);
-
-  useEffect(() => {
-    setError(null);
-    api.detectSystem().then(setInfo, (e) => setError(errorText(e)));
-  }, [run]);
-
   return (
     <>
-      <h2>{t("setup.scan.title")}</h2>
-      <p>{t("setup.scan.desc")}</p>
-      {error && (
-        <>
-          <MessageBar intent="error"><MessageBarBody>{t("setup.scan.failed")} {error}</MessageBarBody></MessageBar>
-          <Button onClick={() => setRun((n) => n + 1)}>{t("common.retry")}</Button>
-        </>
-      )}
-      {!info && !error && (
-        <>
-          <ProgressBar />
-          <p>{t("setup.scan.working")}</p>
-        </>
-      )}
-      {info && <HardwareTiles info={info} />}
+      <Logo size={40} />
+      <h2>{t("setup.welcome.title")}</h2>
+      <p>{t("setup.welcome.body")}</p>
+      <ul className="promises">
+        <li><ShieldCheckmark20Regular />{t("setup.welcome.p1")}</li>
+        <li><ShieldCheckmark20Regular />{t("setup.welcome.p2")}</li>
+        <li><ShieldCheckmark20Regular />{t("setup.welcome.p3")}</li>
+      </ul>
+      <div className="lang-line">
+        <span className="muted small">{t("setup.welcome.language")}</span>
+        <LanguagePicker />
+      </div>
+      <div className="setup-foot"><span /><Button appearance="primary" size="large" onClick={onNext}>{t("setup.welcome.start")}</Button></div>
     </>
   );
 }
 
-function RestoreStep({ ok, onOk }: { ok: boolean; onOk: () => void }) {
+function Recommend({ onBack, onDone }: { onBack: () => void; onDone: (applied: number) => void }) {
   const { t } = useTranslation();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { system, tweaks, settings, setTweak, reloadTweaks } = useApp();
+  const [checked, setChecked] = useState<Set<string> | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const seeded = useRef(false);
 
-  const create = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.createSnapshot("Zanrei – first run");
-      onOk();
-    } catch (e) {
-      setError(errorText(e));
-    } finally {
-      setBusy(false);
+  const candidates = useMemo(
+    () => (tweaks ?? []).filter((x) => x.recommended && x.risk !== "Advanced" && (x.state === "NotApplied" || x.state === "Partial") && !settings.user_disabled.includes(x.id)),
+    [tweaks, settings.user_disabled],
+  );
+  const alreadyOn = (tweaks ?? []).filter((x) => x.recommended && x.state === "Applied").length;
+
+  // Safe ones start ticked; moderate ones are offered but never pre-selected.
+  useEffect(() => {
+    if (tweaks && !seeded.current) {
+      seeded.current = true;
+      setChecked(new Set(candidates.filter((x) => x.risk === "Safe").map((x) => x.id)));
     }
+  }, [tweaks, candidates]);
+
+  const toggle = (id: string, on: boolean) =>
+    setChecked((c) => {
+      const n = new Set(c);
+      if (on) n.add(id);
+      else n.delete(id);
+      return n;
+    });
+
+  const apply = async () => {
+    const ids = candidates.filter((x) => checked?.has(x.id)).map((x) => x.id);
+    if (!ids.length) return onDone(0);
+    setFailure(null);
+    let ok = 0;
+    for (const [n, id] of ids.entries()) {
+      setProgress({ done: n, total: ids.length });
+      const error = await setTweak(id, true);
+      if (error !== null) {
+        // The first change creates the restore point; if that cannot be made, nothing may change.
+        setFailure(error);
+        setProgress(null);
+        await reloadTweaks();
+        return;
+      }
+      ok++;
+    }
+    setProgress(null);
+    onDone(ok);
   };
 
+  const loading = tweaks === null || system === null || checked === null;
+  const count = checked?.size ?? 0;
   return (
     <>
-      <h2>{t("setup.restore.title")}</h2>
-      <p>{t("setup.restore.desc")}</p>
-      {busy && <ProgressBar />}
-      {ok ? (
-        <MessageBar intent="success" icon={<ShieldCheckmark24Regular />}>
-          <MessageBarBody>{t("setup.restore.done")}</MessageBarBody>
-        </MessageBar>
+      <h2>{t("setup.recommend.title")}</h2>
+      {loading ? (
+        <div className="scan"><ProgressBar /><p className="muted">{t("setup.scan.working")}</p></div>
       ) : (
-        <Button appearance="primary" disabled={busy} onClick={() => void create()}>
-          {busy ? t("setup.restore.creating") : t("setup.restore.create")}
-        </Button>
+        <>
+          <p>
+            {t(`overview.tier.${system.tier}`)} · {t("setup.recommend.found", { count: candidates.length })}
+            {alreadyOn > 0 && ` ${t("setup.recommend.alreadyOn", { count: alreadyOn })}`}
+          </p>
+          {candidates.length === 0 ? (
+            <p className="ok-line"><CheckmarkCircle20Regular />{t("overview.summaryDone")}</p>
+          ) : (
+            <ul className="pick-list">
+              {candidates.map((x) => (
+                <li key={x.id}>
+                  <Checkbox checked={checked.has(x.id)} disabled={progress !== null} onChange={(_, d) => toggle(x.id, !!d.checked)} label={t(`tweaks.${x.id}.name`)} />
+                  <span className="desc">{t(`tweaks.${x.id}.desc`)}</span>
+                  {x.risk === "Moderate" && <span className="flag warn"><Warning16Regular />{t("optimize.risk.Moderate")}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          <details className="pc-details">
+            <summary>{t("setup.recommend.pc")}</summary>
+            <PcSummary info={system} />
+          </details>
+          <p className="muted small note"><ShieldCheckmark20Regular />{t("setup.recommend.safety")}</p>
+          {failure !== null && (
+            <MessageBar intent="error">
+              <MessageBarBody>
+                <b>{t("setup.recommend.failed")}</b>
+                <div className="selectable small">{failure}</div>
+              </MessageBarBody>
+            </MessageBar>
+          )}
+          {progress && <ProgressBar value={progress.done / progress.total} />}
+        </>
       )}
-      {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>
-            <b>{t("setup.restore.failed")}</b>
-            <div className="selectable" style={{ fontSize: 12, marginTop: 4 }}>{error}</div>
-          </MessageBarBody>
-        </MessageBar>
-      )}
+      <div className="setup-foot">
+        <Button appearance="subtle" disabled={progress !== null} onClick={onBack}>{t("common.back")}</Button>
+        <div className="btn-row">
+          {!loading && candidates.length > 0 && <Button appearance="subtle" disabled={progress !== null} onClick={() => onDone(0)}>{t("setup.recommend.skip")}</Button>}
+          <Button appearance="primary" size="large" disabled={loading || progress !== null} icon={progress ? <Spinner size="tiny" /> : undefined} onClick={() => void apply()}>
+            {progress
+              ? t("setup.recommend.applying", { done: progress.done + 1, total: progress.total })
+              : failure !== null
+                ? t("common.retry")
+                : candidates.length === 0
+                  ? t("common.next")
+                  : t("setup.recommend.apply", { count })}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Done({ applied, onFinish }: { applied: number; onFinish: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <CheckmarkCircle20Regular style={{ width: 40, height: 40, color: "var(--ok)" }} />
+      <h2>{t("setup.done.title")}</h2>
+      <p>{applied > 0 ? t("setup.done.applied", { count: applied }) : t("setup.done.nothing")}</p>
+      <p className="muted">{applied > 0 ? t("setup.done.autoNote") : t("setup.done.manualNote")}</p>
+      <div className="setup-foot"><span /><Button appearance="primary" size="large" onClick={onFinish}>{t("setup.done.start")}</Button></div>
     </>
   );
 }

@@ -1,6 +1,6 @@
 [package]
 name = "zanrei"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "Zanrei - Windows optimization with a mandatory undo."
 
@@ -27,3 +27,6 @@ zanrei-core = { path = "../crates/core" }
 
 [build-dependencies]
 tauri-build = "2.7.4"
+
+[dev-dependencies]
+tempfile = "3.27.0"

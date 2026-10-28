@@ -73,6 +73,9 @@ pub struct Tweak {
     pub min_build: u32,
     pub recommended: &'static [Tier],
     pub reversible: bool,
+    /// Stock Windows already behaves like the applied state while the values are absent, so a PC that
+    /// never touched them counts as "on". Turning it off writes explicit values instead of deleting.
+    pub default_applied: bool,
     pub actions: Vec<Action>,
 }
 
@@ -129,6 +132,13 @@ fn reg_string(p: &dyn Platform, key: &RegKey) -> Result<String> {
 pub fn state(p: &dyn Platform, t: &Tweak, build: u32) -> State {
     if build < t.min_build {
         return State::Unavailable;
+    }
+    if t.default_applied
+        && t.actions
+            .iter()
+            .all(|a| matches!(a, Action::Reg { key, .. } if p.reg_get(key).ok().flatten().is_none()))
+    {
+        return State::Applied;
     }
     let states: Vec<bool> = t
         .actions
@@ -253,6 +263,7 @@ mod tests {
             min_build: 0,
             recommended: &[],
             reversible: true,
+            default_applied: false,
             actions,
         }
     }
@@ -287,6 +298,22 @@ mod tests {
         assert_eq!(state(&p, &t, 19045), State::NotApplied);
         assert_eq!(p.reg_get(&key("A")).unwrap(), Some(RegValue::Dword(1)));
         assert_eq!(p.reg_get(&key("B")).unwrap(), None);
+    }
+
+    #[test]
+    fn stock_default_counts_as_applied_until_switched_off() {
+        let (_d, store, p, sid) = setup();
+        let mut t = tweak(vec![Action::Reg {
+            key: key("G"),
+            apply: RegValue::Dword(1),
+            revert: Some(RegValue::Dword(0)),
+        }]);
+        t.default_applied = true;
+        assert_eq!(state(&p, &t, 0), State::Applied); // value absent = Windows default = on
+        revert(&p, &t).unwrap(); // switching off writes an explicit 0 ...
+        assert_eq!(state(&p, &t, 0), State::NotApplied);
+        apply(&store, &p, &sid, &t, 0).unwrap(); // ... and on again restores 1
+        assert_eq!(state(&p, &t, 0), State::Applied);
     }
 
     #[test]

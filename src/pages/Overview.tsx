@@ -1,78 +1,60 @@
-import { Button, ProgressBar, Spinner } from "@fluentui/react-components";
-import { Rocket24Regular } from "@fluentui/react-icons";
-import { useState } from "react";
+import { Button, Spinner } from "@fluentui/react-components";
+import { CheckmarkCircle20Regular, Warning16Regular } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
-import { Confirm } from "../components/Confirm";
-import { HardwareTiles } from "../components/Hardware";
-import type { Page } from "../components/Shell";
-import { CATEGORIES, type Category } from "../lib/api";
+import { PcSummary } from "../components/PcSummary";
 import { useApp } from "../state";
 
-export function Overview({ onOpen }: { onOpen: (p: Page, c?: Category | "all") => void }) {
+export function Overview() {
   const { t } = useTranslation();
-  const { system, tweaks, settings, applyRecommended, applying, boost } = useApp();
-  const [ask, setAsk] = useState(false);
+  const { system, tweaks, settings, applyRecommended, applying } = useApp();
 
   const todo = (tweaks ?? []).filter(
-    (x) => x.recommended && x.risk !== "Advanced" && x.state !== "Applied" && x.state !== "Unavailable" && !settings.user_disabled.includes(x.id),
+    (x) => x.recommended && x.risk !== "Advanced" && (x.state === "NotApplied" || x.state === "Partial") && !settings.user_disabled.includes(x.id),
   );
+  const loading = tweaks === null || system === null;
 
   return (
     <div className="page">
-      <div className="hero">
-        <div>
-          <h1>{tweaks === null ? t("overview.heroLoading") : todo.length ? t("overview.heroTodo", { count: todo.length }) : t("overview.heroDone")}</h1>
-          <p>{todo.length ? t("overview.heroTodoDesc") : t("overview.heroDoneDesc")}</p>
-        </div>
-        <div className="actions">
-          {todo.length > 0 && (
-            <Button appearance="primary" size="large" icon={applying ? <Spinner size="tiny" /> : <Rocket24Regular />} disabled={applying} onClick={() => setAsk(true)}>
-              {t("overview.apply")}
+      <section className="lead">
+        <h1>{loading ? t("overview.loading") : t(`overview.tier.${system.tier}`)}</h1>
+        {!loading && (
+          <p>
+            {todo.length ? (
+              t("overview.summaryTodo", { count: todo.length })
+            ) : (
+              <span className="ok-line"><CheckmarkCircle20Regular />{t("overview.summaryDone")}</span>
+            )}
+          </p>
+        )}
+      </section>
+
+      {todo.length > 0 && (
+        <section className="panel">
+          <div className="sect-head">
+            <h2>{t("optimize.forThisPc")}</h2>
+            <Button appearance="primary" disabled={applying} icon={applying ? <Spinner size="tiny" /> : undefined} onClick={() => void applyRecommended(true)}>
+              {t("overview.apply", { count: todo.length })}
             </Button>
-          )}
-          <Button size="large" onClick={() => onOpen("optimize")}>{t("overview.review")}</Button>
-        </div>
-      </div>
-
-      {system && <HardwareTiles info={system} />}
-
-      <div>
-        <div className="page-head"><h2 style={{ margin: 0, fontSize: 16 }}>{t("overview.categories")}</h2></div>
-        <div className="cols" style={{ marginTop: 10 }}>
-          {CATEGORIES.map((c) => {
-            const list = (tweaks ?? []).filter((x) => x.category === c && x.state !== "Unavailable");
-            const done = list.filter((x) => x.state === "Applied").length;
-            return (
-              <div key={c} className="card interactive" role="button" tabIndex={0} onClick={() => onOpen("optimize", c)} onKeyDown={(e) => e.key === "Enter" && onOpen("optimize", c)}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                  <b>{t(`optimize.category.${c}`)}</b>
-                  <span className="pill">{done} / {list.length}</span>
-                </div>
-                <ProgressBar value={list.length ? done / list.length : 0} thickness="medium" />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="card interactive" role="button" tabIndex={0} onClick={() => onOpen("games")} onKeyDown={(e) => e.key === "Enter" && onOpen("games")}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <div>
-            <b>{t("games.boostTitle")}</b>
-            <div className="selectable" style={{ color: "var(--muted)", fontSize: 13, marginTop: 2 }}>
-              {boost.active ? t("games.boostActive", { game: boost.game ?? "" }) : settings.game_boost ? t("games.boostWaiting") : t("games.boostOff")}
-            </div>
           </div>
-          <span className={`pill ${boost.active ? "accent" : ""}`}>{boost.active ? t("games.on") : settings.game_boost ? t("games.armed") : t("games.off")}</span>
-        </div>
-      </div>
+          <p className="muted small">{t("overview.safetyNote")}</p>
+          <ul className="rec-list">
+            {todo.map((x) => (
+              <li key={x.id}>
+                <span className="name">{t(`tweaks.${x.id}.name`)}</span>
+                {x.risk === "Moderate" && <span className="flag warn"><Warning16Regular />{t("optimize.risk.Moderate")}</span>}
+                <span className="desc">{t(`tweaks.${x.id}.desc`)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-      <Confirm open={ask} title={t("overview.confirmTitle", { count: todo.length })} confirmLabel={t("overview.apply")} onClose={() => setAsk(false)} onConfirm={() => void applyRecommended(true)}>
-        <p>{t("overview.confirmBody")}</p>
-        <ul style={{ margin: 0, paddingInlineStart: 20 }}>
-          {todo.map((x) => <li key={x.id}>{t(`tweaks.${x.id}.name`)}</li>)}
-        </ul>
-      </Confirm>
+      {system && (
+        <section className="panel">
+          <div className="sect-head"><h2>{t("overview.title")}</h2></div>
+          <PcSummary info={system} />
+        </section>
+      )}
     </div>
   );
 }

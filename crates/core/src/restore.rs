@@ -33,6 +33,9 @@ pub struct Snapshot {
     pub label: String,
     pub entries: Vec<Entry>,
     pub rolled_back: bool,
+    /// Human-meaningful names of what was changed (tweak ids, "game:option:exe"); shown on the Restore page.
+    #[serde(default)]
+    pub notes: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -94,6 +97,7 @@ impl Store {
             label: label.into(),
             entries: vec![],
             rolled_back: false,
+            notes: vec![],
         };
         self.save(&snap)?;
         Ok(snap)
@@ -105,6 +109,16 @@ impl Store {
             return Err(Error::Msg("snapshot already rolled back".into()));
         }
         Ok(snap)
+    }
+
+    /// Records what a change was for. Duplicates are ignored; a missing snapshot is an error.
+    pub fn note(&self, id: &str, note: &str) -> Result<()> {
+        let mut snap = self.open(id)?;
+        if !snap.notes.iter().any(|n| n == note) {
+            snap.notes.push(note.to_string());
+            self.save(&snap)?;
+        }
+        Ok(())
     }
 
     /// The only way a registry value is allowed to change.
@@ -345,6 +359,20 @@ pub(crate) mod tests {
         assert_eq!(p.reg_get(&key("A")).unwrap(), Some(RegValue::Binary(vec![1, 2])));
         assert_eq!(p.task_enabled("\\T").unwrap(), Some(true));
         assert_eq!(p.ran.lock().unwrap().last().unwrap(), "powercfg /h on");
+    }
+
+    #[test]
+    fn notes_are_kept_once_and_old_snapshots_still_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let (store, p) = (Store::new(dir.path().into()), Fake::default());
+        let s = store.create(&p, "test").unwrap();
+        store.note(&s.id, "telemetry").unwrap();
+        store.note(&s.id, "telemetry").unwrap();
+        assert_eq!(store.get(&s.id).unwrap().notes, ["telemetry"]);
+        // a snapshot file written before notes existed has no such field
+        let old = r#"{"id":"1","created_unix":1,"label":"x","entries":[],"rolled_back":false}"#;
+        std::fs::write(dir.path().join("snapshots/0000000000000001.json"), old).unwrap();
+        assert!(store.get("0000000000000001").unwrap().notes.is_empty());
     }
 
     #[test]
