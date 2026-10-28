@@ -1,0 +1,58 @@
+import type { Locale } from "./en";
+
+export default {
+  common: { next: "Siguiente", back: "Atrás", finish: "Finalizar", retry: "Reintentar", cancel: "Cancelar", confirm: "Confirmar" },
+  setup: {
+    language: { title: "Elige tu idioma", desc: "Puedes cambiarlo más tarde en Ajustes." },
+    scan: {
+      title: "Analizando tu PC",
+      desc: "Zanrei revisa tu hardware para sugerir los ajustes adecuados. No se cambia nada.",
+      working: "Analizando…",
+      failed: "El análisis falló.",
+    },
+    restore: {
+      title: "Crea una red de seguridad",
+      desc: "Antes de cambiar nada, Zanrei crea un punto de restauración de Windows. Cada cambio se puede deshacer desde la app.",
+      create: "Crear punto de restauración",
+      creating: "Creando punto de restauración…",
+      done: "Punto de restauración creado.",
+      failed: "No se pudo crear un punto de restauración. Zanrei no cambiará nada sin uno.",
+    },
+    mode: {
+      title: "¿Cuánto debe hacer Zanrei?",
+      desc: "Puedes cambiarlo cuando quieras.",
+      manual: { name: "Manual", desc: "No ocurre nada a menos que lo elijas." },
+      recommended: { name: "Recomendado", desc: "Zanrei sugiere mejoras seguras y tú confirmas cada una." },
+      auto: { name: "Automático", desc: "Zanrei aplica mejoras seguras por sí mismo, siempre tras crear un punto de restauración." },
+    },
+    done: { title: "Todo listo", desc: "Zanrei está listo.", start: "Abrir Zanrei" },
+  },
+  nav: { overview: "Resumen", restore: "Restaurar", settings: "Ajustes" },
+  overview: {
+    title: "Tu PC",
+    cpu: "Procesador",
+    ram: "Memoria",
+    gpu: "Gráficos",
+    storage: "Almacenamiento",
+    os: "Sistema",
+    noGpu: "No se detectó tarjeta gráfica",
+    cores: "{{physical}} núcleos / {{logical}} hilos",
+    tierLabel: "Clase de rendimiento",
+    tier: { Legacy: "PC antiguo", Mainstream: "PC de gama media", High: "PC de alto rendimiento" },
+  },
+  restore: {
+    title: "Restaurar",
+    desc: "Cada cambio que hace Zanrei se guarda aquí y se puede deshacer.",
+    empty: "Aún no hay puntos de restauración.",
+    create: "Crear punto de restauración",
+    creating: "Creando…",
+    rollback: "Deshacer",
+    rolledBack: "Deshecho",
+    changes: "Cambios: {{count}}",
+    openSystem: "Abrir Restaurar sistema de Windows",
+    confirmTitle: "¿Deshacer este punto de restauración?",
+    confirmBody: "Se revertirán todos los cambios guardados en este punto.",
+    failed: "Algo salió mal",
+  },
+  settings: { title: "Ajustes", language: "Idioma", mode: "Nivel de automatización" },
+} satisfies Locale;

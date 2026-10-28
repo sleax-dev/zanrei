@@ -1,0 +1,17 @@
+[package]
+name = "zanrei"
+version = "0.1.0"
+edition = "2024"
+description = "Zanrei - Windows optimization with a mandatory undo."
+
+[lib]
+name = "zanrei_lib"
+
+[dependencies]
+serde_json = "1.0.154"
+tauri = "2.12.5"
+tauri-plugin-os = "2.4.0"
+zanrei-core = { path = "../crates/core" }
+
+[build-dependencies]
+tauri-build = "2.7.4"

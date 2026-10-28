@@ -1,0 +1,58 @@
+import type { Locale } from "./en";
+
+export default {
+  common: { next: "التالي", back: "رجوع", finish: "إنهاء", retry: "إعادة المحاولة", cancel: "إلغاء", confirm: "تأكيد" },
+  setup: {
+    language: { title: "اختر لغتك", desc: "يمكنك تغيير ذلك لاحقًا من الإعدادات." },
+    scan: {
+      title: "جارٍ فحص جهازك",
+      desc: "يفحص Zanrei عتادك ليقترح الإعدادات المناسبة. لن يتم تغيير أي شيء.",
+      working: "جارٍ الفحص…",
+      failed: "فشل الفحص.",
+    },
+    restore: {
+      title: "أنشئ شبكة أمان",
+      desc: "قبل أن يغيّر Zanrei أي شيء، ينشئ نقطة استعادة في Windows. يمكن التراجع عن كل تغيير من داخل التطبيق.",
+      create: "إنشاء نقطة استعادة",
+      creating: "جارٍ إنشاء نقطة الاستعادة…",
+      done: "تم إنشاء نقطة الاستعادة.",
+      failed: "تعذّر إنشاء نقطة استعادة. لن يغيّر Zanrei أي شيء بدونها.",
+    },
+    mode: {
+      title: "ما مقدار ما يفعله Zanrei؟",
+      desc: "يمكنك تغيير ذلك في أي وقت.",
+      manual: { name: "يدوي", desc: "لا يحدث شيء ما لم تختره." },
+      recommended: { name: "موصى به", desc: "يقترح Zanrei تحسينات آمنة وتؤكد أنت كل واحد منها." },
+      auto: { name: "تلقائي", desc: "يطبّق Zanrei التحسينات الآمنة بنفسه، وبعد إنشاء نقطة استعادة دائمًا." },
+    },
+    done: { title: "كل شيء جاهز", desc: "Zanrei جاهز.", start: "فتح Zanrei" },
+  },
+  nav: { overview: "نظرة عامة", restore: "الاستعادة", settings: "الإعدادات" },
+  overview: {
+    title: "جهازك",
+    cpu: "المعالج",
+    ram: "الذاكرة",
+    gpu: "الرسومات",
+    storage: "التخزين",
+    os: "النظام",
+    noGpu: "لم يتم العثور على بطاقة رسومات",
+    cores: "{{physical}} أنوية / {{logical}} مسارات",
+    tierLabel: "فئة الأداء",
+    tier: { Legacy: "جهاز قديم", Mainstream: "جهاز متوسط", High: "جهاز عالي الأداء" },
+  },
+  restore: {
+    title: "الاستعادة",
+    desc: "يُحفظ هنا كل تغيير يجريه Zanrei ويمكن التراجع عنه.",
+    empty: "لا توجد نقاط استعادة بعد.",
+    create: "إنشاء نقطة استعادة",
+    creating: "جارٍ الإنشاء…",
+    rollback: "تراجع",
+    rolledBack: "تم التراجع",
+    changes: "التغييرات: {{count}}",
+    openSystem: "فتح استعادة النظام في Windows",
+    confirmTitle: "التراجع عن نقطة الاستعادة هذه؟",
+    confirmBody: "ستتم إعادة جميع التغييرات المحفوظة في هذه النقطة إلى حالتها السابقة.",
+    failed: "حدث خطأ ما",
+  },
+  settings: { title: "الإعدادات", language: "اللغة", mode: "مستوى الأتمتة" },
+} satisfies Locale;

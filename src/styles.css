@@ -1,0 +1,15 @@
+html, body, #root { height: 100%; margin: 0; }
+html, body { background: transparent; overflow: hidden; }
+body { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+
+/* Desktop-app feel: the UI isn't selectable text, only content is. */
+body { user-select: none; cursor: default; overscroll-behavior: none; }
+input, textarea, .selectable { user-select: text; }
+
+/* Mica shows through this tint; without Mica (Windows 10) it is opaque. */
+.app-bg { height: 100%; background: #0B0B10; }
+.app-bg.mica { background: rgba(11, 11, 16, 0.72); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

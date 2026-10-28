@@ -1,0 +1,54 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@v1
+        with: { toolchain: stable, targets: i686-pc-windows-msvc }
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+      - run: npx tsc
+      - run: cargo test -p zanrei-core
+
+  # One installer for every supported Windows: a 32-bit (i686) build runs on both 32-bit and 64-bit
+  # Windows 10/11. Windows 8.1 and older are not possible: WebView2 stopped at v109 and Rust's
+  # standard Windows targets require Windows 10.
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@v1
+        with: { toolchain: stable, targets: i686-pc-windows-msvc }
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Zanrei ${{ github.ref_name }}
+          releaseBody: |
+            Windows 10 / 11, 32-bit and 64-bit. Download the `*-setup.exe` and run it.
+            Zanrei needs administrator rights (it creates restore points).
+            The installer is not code-signed yet, so Windows SmartScreen may warn on first run.
+          releaseDraft: false
+          prerelease: false
+          args: --target i686-pc-windows-msvc --bundles nsis

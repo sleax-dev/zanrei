@@ -1,0 +1,58 @@
+import type { Locale } from "./en";
+
+export default {
+  common: { next: "Suivant", back: "Retour", finish: "Terminer", retry: "Réessayer", cancel: "Annuler", confirm: "Confirmer" },
+  setup: {
+    language: { title: "Choisis ta langue", desc: "Tu pourras la modifier plus tard dans les Paramètres." },
+    scan: {
+      title: "Analyse de ton PC",
+      desc: "Zanrei examine ton matériel pour proposer les bons réglages. Rien n'est modifié.",
+      working: "Analyse en cours…",
+      failed: "L'analyse a échoué.",
+    },
+    restore: {
+      title: "Crée un filet de sécurité",
+      desc: "Avant de modifier quoi que ce soit, Zanrei crée un point de restauration Windows. Chaque modification peut être annulée depuis l'application.",
+      create: "Créer un point de restauration",
+      creating: "Création du point de restauration…",
+      done: "Point de restauration créé.",
+      failed: "Impossible de créer un point de restauration. Zanrei ne modifiera rien sans lui.",
+    },
+    mode: {
+      title: "Que doit faire Zanrei ?",
+      desc: "Tu peux changer cela à tout moment.",
+      manual: { name: "Manuel", desc: "Rien ne se passe sans ton choix." },
+      recommended: { name: "Recommandé", desc: "Zanrei propose des améliorations sûres et tu confirmes chacune." },
+      auto: { name: "Automatique", desc: "Zanrei applique lui-même les améliorations sûres, toujours après avoir créé un point de restauration." },
+    },
+    done: { title: "Tout est prêt", desc: "Zanrei est prêt.", start: "Ouvrir Zanrei" },
+  },
+  nav: { overview: "Aperçu", restore: "Restaurer", settings: "Paramètres" },
+  overview: {
+    title: "Ton PC",
+    cpu: "Processeur",
+    ram: "Mémoire",
+    gpu: "Graphismes",
+    storage: "Stockage",
+    os: "Système",
+    noGpu: "Aucune carte graphique détectée",
+    cores: "{{physical}} cœurs / {{logical}} threads",
+    tierLabel: "Classe de performance",
+    tier: { Legacy: "PC ancien", Mainstream: "PC milieu de gamme", High: "PC haute performance" },
+  },
+  restore: {
+    title: "Restaurer",
+    desc: "Chaque modification de Zanrei est enregistrée ici et peut être annulée.",
+    empty: "Aucun point de restauration pour l'instant.",
+    create: "Créer un point de restauration",
+    creating: "Création…",
+    rollback: "Annuler",
+    rolledBack: "Annulé",
+    changes: "Modifications : {{count}}",
+    openSystem: "Ouvrir la Restauration du système Windows",
+    confirmTitle: "Annuler ce point de restauration ?",
+    confirmBody: "Toutes les modifications enregistrées dans ce point seront annulées.",
+    failed: "Une erreur s'est produite",
+  },
+  settings: { title: "Paramètres", language: "Langue", mode: "Niveau d'automatisation" },
+} satisfies Locale;

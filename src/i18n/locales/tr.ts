@@ -1,0 +1,58 @@
+import type { Locale } from "./en";
+
+export default {
+  common: { next: "İleri", back: "Geri", finish: "Bitir", retry: "Tekrar dene", cancel: "Vazgeç", confirm: "Onayla" },
+  setup: {
+    language: { title: "Dilini seç", desc: "Bunu daha sonra Ayarlar'dan değiştirebilirsin." },
+    scan: {
+      title: "Bilgisayarın inceleniyor",
+      desc: "Zanrei, doğru ayarları önerebilmek için donanımına bakar. Hiçbir şey değiştirilmez.",
+      working: "Taranıyor…",
+      failed: "Tarama başarısız oldu.",
+    },
+    restore: {
+      title: "Güvenlik ağı oluştur",
+      desc: "Zanrei bir şeyi değiştirmeden önce bir Windows geri yükleme noktası oluşturur. Her değişiklik uygulamanın içinden geri alınabilir.",
+      create: "Geri yükleme noktası oluştur",
+      creating: "Geri yükleme noktası oluşturuluyor…",
+      done: "Geri yükleme noktası oluşturuldu.",
+      failed: "Geri yükleme noktası oluşturulamadı. Zanrei, nokta olmadan hiçbir şeyi değiştirmez.",
+    },
+    mode: {
+      title: "Zanrei ne kadar iş yapsın?",
+      desc: "Bunu istediğin zaman değiştirebilirsin.",
+      manual: { name: "Manuel", desc: "Sen seçmedikçe hiçbir şey yapılmaz." },
+      recommended: { name: "Önerilen", desc: "Zanrei güvenli iyileştirmeler önerir, her birini sen onaylarsın." },
+      auto: { name: "Otomatik", desc: "Zanrei güvenli iyileştirmeleri kendisi uygular, her zaman önce geri yükleme noktası oluşturur." },
+    },
+    done: { title: "Her şey hazır", desc: "Zanrei kullanıma hazır.", start: "Zanrei'yi aç" },
+  },
+  nav: { overview: "Genel bakış", restore: "Geri yükle", settings: "Ayarlar" },
+  overview: {
+    title: "Bilgisayarın",
+    cpu: "İşlemci",
+    ram: "Bellek",
+    gpu: "Ekran kartı",
+    storage: "Depolama",
+    os: "Sistem",
+    noGpu: "Ekran kartı bulunamadı",
+    cores: "{{physical}} çekirdek / {{logical}} iş parçacığı",
+    tierLabel: "Performans sınıfı",
+    tier: { Legacy: "Eski bilgisayar", Mainstream: "Orta seviye bilgisayar", High: "Yüksek performanslı bilgisayar" },
+  },
+  restore: {
+    title: "Geri yükle",
+    desc: "Zanrei'nin yaptığı her değişiklik burada saklanır ve geri alınabilir.",
+    empty: "Henüz geri yükleme noktası yok.",
+    create: "Geri yükleme noktası oluştur",
+    creating: "Oluşturuluyor…",
+    rollback: "Geri al",
+    rolledBack: "Geri alındı",
+    changes: "Değişiklik: {{count}}",
+    openSystem: "Windows Sistem Geri Yükleme'yi aç",
+    confirmTitle: "Bu geri yükleme noktası geri alınsın mı?",
+    confirmBody: "Bu noktada kayıtlı tüm değişiklikler eski haline döndürülecek.",
+    failed: "Bir şeyler ters gitti",
+  },
+  settings: { title: "Ayarlar", language: "Dil", mode: "Otomasyon seviyesi" },
+} satisfies Locale;
