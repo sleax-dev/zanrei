@@ -19,6 +19,10 @@ Include:
 - A corrupted restore journal, or an undo that changes the system in unexpected ways
 - Any system change made without the user's knowledge
 
+## Updates
+
+Update packages are signed and the app verifies the signature against a public key built into it before installing. Reports about weaknesses in this chain are in scope.
+
 ## Supported versions
 
 Only the latest release receives fixes.

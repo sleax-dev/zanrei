@@ -1,7 +1,7 @@
-import type { Locale } from "./en";
+import type { DeepPartial, Locale } from "./en";
 
 export default {
-  common: { next: "التالي", back: "رجوع", finish: "إنهاء", retry: "إعادة المحاولة", cancel: "إلغاء", confirm: "تأكيد" },
+  common: { next: "التالي", back: "رجوع", finish: "إنهاء", retry: "إعادة المحاولة", cancel: "إلغاء", confirm: "تأكيد", close: "إغلاق", loading: "جارٍ التحميل…", search: "بحث" },
   setup: {
     language: { title: "اختر لغتك", desc: "يمكنك تغيير ذلك لاحقًا من الإعدادات." },
     scan: {
@@ -27,7 +27,8 @@ export default {
     },
     done: { title: "كل شيء جاهز", desc: "Zanrei جاهز.", start: "فتح Zanrei" },
   },
-  nav: { overview: "نظرة عامة", restore: "الاستعادة", settings: "الإعدادات" },
+  nav: { overview: "نظرة عامة", restore: "الاستعادة", settings: "الإعدادات", optimize: "تحسين", games: "الألعاب" },
+  titlebar: { background: "إرسال إلى الخلفية" },
   overview: {
     title: "جهازك",
     cpu: "المعالج",
@@ -54,5 +55,5 @@ export default {
     confirmBody: "ستتم إعادة جميع التغييرات المحفوظة في هذه النقطة إلى حالتها السابقة.",
     failed: "حدث خطأ ما",
   },
-  settings: { title: "الإعدادات", language: "اللغة", mode: "مستوى الأتمتة" },
-} satisfies Locale;
+  settings: { title: "الإعدادات", language: "اللغة" },
+} satisfies DeepPartial<Locale>;

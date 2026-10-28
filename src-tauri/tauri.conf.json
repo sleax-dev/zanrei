@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Zanrei",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "app.zanrei.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -16,11 +16,15 @@
         "title": "Zanrei",
         "width": 1120,
         "height": 740,
-        "minWidth": 900,
-        "minHeight": 600,
+        "minWidth": 960,
+        "minHeight": 640,
         "center": true,
         "transparent": true,
-        "theme": "Dark"
+        "theme": "Dark",
+        "decorations": false,
+        "maximizable": false,
+        "visible": false,
+        "shadow": true
       }
     ],
     "security": {
@@ -29,14 +33,45 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
       "nsis": {
         "installMode": "perMachine",
         "displayLanguageSelector": true,
-        "languages": ["English", "Turkish", "Spanish", "German", "French", "PortugueseBR", "Russian", "SimpChinese", "Japanese", "Arabic"]
+        "languages": [
+          "English",
+          "Turkish",
+          "Spanish",
+          "German",
+          "French",
+          "PortugueseBR",
+          "Russian",
+          "SimpChinese",
+          "Japanese",
+          "Arabic"
+        ]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDA2Nzk2RkM1QjcxNDE0QzAKUldUQUZCUzN4Vzk1QnN6TmhwQTJYUG1YVDNXM3g0cUlWd1V6WjBkTDRnWUs3cnMxdnZTREZTd0cK",
+      "endpoints": [
+        "https://github.com/sleax-dev/zanrei/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

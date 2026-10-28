@@ -1,7 +1,7 @@
-import type { Locale } from "./en";
+import type { DeepPartial, Locale } from "./en";
 
 export default {
-  common: { next: "次へ", back: "戻る", finish: "完了", retry: "再試行", cancel: "キャンセル", confirm: "確認" },
+  common: { next: "次へ", back: "戻る", finish: "完了", retry: "再試行", cancel: "キャンセル", confirm: "確認", close: "閉じる", loading: "読み込み中…", search: "検索" },
   setup: {
     language: { title: "言語を選択", desc: "後から設定で変更できます。" },
     scan: {
@@ -27,7 +27,8 @@ export default {
     },
     done: { title: "準備完了", desc: "Zanreiの準備ができました。", start: "Zanreiを開く" },
   },
-  nav: { overview: "概要", restore: "復元", settings: "設定" },
+  nav: { overview: "概要", restore: "復元", settings: "設定", optimize: "最適化", games: "ゲーム" },
+  titlebar: { background: "バックグラウンドに送る" },
   overview: {
     title: "お使いのPC",
     cpu: "プロセッサ",
@@ -54,5 +55,5 @@ export default {
     confirmBody: "この復元ポイントに保存されたすべての変更が元に戻されます。",
     failed: "問題が発生しました",
   },
-  settings: { title: "設定", language: "言語", mode: "自動化レベル" },
-} satisfies Locale;
+  settings: { title: "設定", language: "言語" },
+} satisfies DeepPartial<Locale>;

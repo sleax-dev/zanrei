@@ -1,7 +1,7 @@
-import type { Locale } from "./en";
+import type { DeepPartial, Locale } from "./en";
 
 export default {
-  common: { next: "下一步", back: "上一步", finish: "完成", retry: "重试", cancel: "取消", confirm: "确认" },
+  common: { next: "下一步", back: "上一步", finish: "完成", retry: "重试", cancel: "取消", confirm: "确认", close: "关闭", loading: "正在加载…", search: "搜索" },
   setup: {
     language: { title: "选择语言", desc: "你可以稍后在设置中更改。" },
     scan: {
@@ -27,7 +27,8 @@ export default {
     },
     done: { title: "一切就绪", desc: "Zanrei 已准备好。", start: "打开 Zanrei" },
   },
-  nav: { overview: "概览", restore: "还原", settings: "设置" },
+  nav: { overview: "概览", restore: "还原", settings: "设置", optimize: "优化", games: "游戏" },
+  titlebar: { background: "转入后台" },
   overview: {
     title: "你的电脑",
     cpu: "处理器",
@@ -54,5 +55,5 @@ export default {
     confirmBody: "此还原点中保存的所有更改都将被还原。",
     failed: "出了点问题",
   },
-  settings: { title: "设置", language: "语言", mode: "自动化级别" },
-} satisfies Locale;
+  settings: { title: "设置", language: "语言" },
+} satisfies DeepPartial<Locale>;

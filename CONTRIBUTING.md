@@ -80,6 +80,16 @@ Add a new `Platform` implementation under `crates/core/src/platform/` and select
 - Video memory is read from a 32-bit Windows field and may be wrong above 4 GB; it will be read from the registry when graphics profiles are added.
 - The performance class uses simple thresholds (memory, cores, SSD, discrete GPU) and will be tuned against real hardware.
 
+## Releasing
+
+1. Update `CHANGELOG.md` and set the new version in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `crates/core/Cargo.toml` (then `cargo check` to refresh `Cargo.lock`).
+2. Push a tag such as `v0.3.0`. GitHub Actions tests, builds the installer and publishes the release.
+3. Installed copies find the release through `latest.json`, which the workflow uploads next to the installer, and verify its signature against the public key in `src-tauri/tauri.conf.json`.
+
+**Updater signing key.** The release workflow signs update packages with the private key stored in the repository secret `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` if it has a password). Without the secret a release still builds but is not offered as an update. Keep a backup of the key: if it is lost, installed copies can no longer verify updates and users must reinstall manually. Never commit it. Generate a new pair with `npx tauri signer generate -w <file>` and put the public half in `plugins.updater.pubkey`.
+
+**Code signing** (removes the SmartScreen warning) is not set up yet. It needs an Authenticode certificate; see Tauri's Windows signing guide and set `bundle.windows.certificateThumbprint` or use a signing service in the workflow.
+
 ## Before opening a pull request
 
 ```powershell

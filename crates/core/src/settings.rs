@@ -1,4 +1,5 @@
 use crate::Result;
+use crate::games::CustomGame;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -14,12 +15,39 @@ pub enum Mode {
     Auto,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct Settings {
     pub language: Option<String>,
     pub setup_done: bool,
     pub mode: Mode,
+    /// Closing or "sending to background" hides the window instead of exiting.
+    pub run_in_background: bool,
+    /// Watch for running games and switch to the high-performance power plan while one is open.
+    pub game_boost: bool,
+    /// Check for updates in the background and offer to install them.
+    pub auto_update: bool,
+    pub custom_games: Vec<CustomGame>,
+    /// Tweaks the user switched off by hand; Automatic mode never re-applies them.
+    pub user_disabled: Vec<String>,
+    /// Power plan to restore if the app died while Game Boost was active.
+    pub boost_restore_scheme: Option<String>,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            language: None,
+            setup_done: false,
+            mode: Mode::default(),
+            run_in_background: true,
+            game_boost: true,
+            auto_update: true,
+            custom_games: vec![],
+            user_disabled: vec![],
+            boost_restore_scheme: None,
+        }
+    }
 }
 
 const FILE: &str = "settings.json";
@@ -52,6 +80,7 @@ mod tests {
             language: Some("tr".into()),
             setup_done: true,
             mode: Mode::Auto,
+            ..Settings::default()
         };
         save(d.path(), &s).unwrap();
         assert_eq!(load(d.path()), s);

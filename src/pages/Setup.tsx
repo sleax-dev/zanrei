@@ -1,59 +1,47 @@
-import { Button, Dropdown, makeStyles, MessageBar, MessageBarBody, Option, ProgressBar, Subtitle1, Text, Title2, tokens } from "@fluentui/react-components";
+import { Button, MessageBar, MessageBarBody, ProgressBar } from "@fluentui/react-components";
 import { ShieldCheckmark24Regular } from "@fluentui/react-icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Hardware } from "../components/Hardware";
+import { HardwareTiles } from "../components/Hardware";
+import { LanguagePicker } from "../components/LanguagePicker";
 import { ModeCards } from "../components/ModeCards";
-import { api, type Mode, type Settings, type SystemInfo } from "../lib/api";
-import { isRtl, LANGUAGES, type Lang, pickLang, setLanguage } from "../i18n";
+import { api, errorText, type Mode, type SystemInfo } from "../lib/api";
+import { isRtl, pickLang } from "../i18n";
+import { useApp } from "../state";
+import { TitleBar } from "../components/TitleBar";
 
 const STEPS = ["language", "scan", "restore", "mode", "done"] as const;
 type Step = (typeof STEPS)[number];
 
-const useStyles = makeStyles({
-  root: { height: "100%", display: "grid", placeItems: "center", padding: tokens.spacingHorizontalXXL },
-  card: {
-    width: "min(640px, 100%)",
-    padding: tokens.spacingHorizontalXXL,
-    borderRadius: tokens.borderRadiusXLarge,
-    backgroundColor: tokens.colorNeutralBackground1,
-    boxShadow: tokens.shadow16,
-    display: "flex",
-    flexDirection: "column",
-    gap: tokens.spacingVerticalL,
-    minHeight: "420px",
-  },
-  body: { flex: 1, display: "flex", flexDirection: "column", gap: tokens.spacingVerticalM },
-  footer: { display: "flex", justifyContent: "space-between" },
-  dots: { display: "flex", gap: tokens.spacingHorizontalXS },
-});
-
-export function Setup({ initial, onDone }: { initial: Settings; onDone: (s: Settings) => void }) {
-  const s = useStyles();
+export function Setup() {
   const { t, i18n } = useTranslation();
+  const { settings, savePrefs, applyRecommended } = useApp();
   const [i, setI] = useState(0);
   const [dir, setDir] = useState(1);
-  const [mode, setMode] = useState<Mode>(initial.mode);
+  const [mode, setMode] = useState<Mode>(settings.mode);
   const [restoreOk, setRestoreOk] = useState(false);
   const step: Step = STEPS[i];
+  const lang = pickLang(i18n.language);
 
   const go = (d: number) => {
     setDir(d);
     setI((x) => x + d);
   };
-  const lang = pickLang(i18n.language);
-  const canNext = step !== "restore" || restoreOk; // restore point is mandatory
+
+  const finish = async () => {
+    await savePrefs({ language: lang, setup_done: true, mode });
+    if (mode === "Auto") void applyRecommended(false);
+  };
 
   return (
-    <div className={s.root}>
-      <div className={s.card}>
-        <div className={s.dots} aria-hidden>
-          {STEPS.map((x, n) => (
-            <ProgressBar key={x} value={n <= i ? 1 : 0} thickness="medium" style={{ flex: 1 }} />
-          ))}
-        </div>
-        <div className={s.body}>
+    <>
+      <TitleBar />
+      <div className="setup">
+        <div className="setup-card">
+          <div className="steps" aria-hidden>
+            {STEPS.map((x, n) => <i key={x} className={n <= i ? "on" : ""} />)}
+          </div>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -61,61 +49,43 @@ export function Setup({ initial, onDone }: { initial: Settings; onDone: (s: Sett
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              style={{ display: "flex", flexDirection: "column", gap: tokens.spacingVerticalM }}
+              className="stack"
+              style={{ gap: 14 }}
             >
-              {step === "language" && <LanguageStep lang={lang} />}
+              {step === "language" && (
+                <>
+                  <h2>{t("setup.language.title")}</h2>
+                  <p>{t("setup.language.desc")}</p>
+                  <LanguagePicker />
+                </>
+              )}
               {step === "scan" && <ScanStep />}
               {step === "restore" && <RestoreStep ok={restoreOk} onOk={() => setRestoreOk(true)} />}
               {step === "mode" && (
                 <>
-                  <Title2>{t("setup.mode.title")}</Title2>
-                  <Text>{t("setup.mode.desc")}</Text>
+                  <h2>{t("setup.mode.title")}</h2>
+                  <p>{t("setup.mode.desc")}</p>
                   <ModeCards value={mode} onChange={setMode} />
                 </>
               )}
               {step === "done" && (
                 <>
-                  <Title2>{t("setup.done.title")}</Title2>
-                  <Text>{t("setup.done.desc")}</Text>
+                  <h2>{t("setup.done.title")}</h2>
+                  <p>{mode === "Auto" ? t("setup.done.descAuto") : t("setup.done.desc")}</p>
                 </>
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
-        <div className={s.footer}>
-          <Button appearance="subtle" disabled={i === 0 || step === "done"} onClick={() => go(-1)}>
-            {t("common.back")}
-          </Button>
-          {step === "done" ? (
-            <Button appearance="primary" onClick={() => onDone({ language: lang, setup_done: true, mode })}>
-              {t("setup.done.start")}
-            </Button>
-          ) : (
-            <Button appearance="primary" disabled={!canNext} onClick={() => go(1)}>
-              {t("common.next")}
-            </Button>
-          )}
+          <div className="setup-foot">
+            <Button appearance="subtle" disabled={i === 0 || step === "done"} onClick={() => go(-1)}>{t("common.back")}</Button>
+            {step === "done" ? (
+              <Button appearance="primary" onClick={() => void finish()}>{t("setup.done.start")}</Button>
+            ) : (
+              <Button appearance="primary" disabled={step === "restore" && !restoreOk} onClick={() => go(1)}>{t("common.next")}</Button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function LanguageStep({ lang }: { lang: Lang }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <Title2>{t("setup.language.title")}</Title2>
-      <Text>{t("setup.language.desc")}</Text>
-      <Dropdown
-        value={LANGUAGES[lang]}
-        selectedOptions={[lang]}
-        onOptionSelect={(_, d) => d.optionValue && setLanguage(d.optionValue as Lang)}
-      >
-        {Object.entries(LANGUAGES).map(([k, name]) => (
-          <Option key={k} value={k}>{name}</Option>
-        ))}
-      </Dropdown>
     </>
   );
 }
@@ -128,26 +98,26 @@ function ScanStep() {
 
   useEffect(() => {
     setError(null);
-    api.detectSystem().then(setInfo, (e) => setError(String(e)));
+    api.detectSystem().then(setInfo, (e) => setError(errorText(e)));
   }, [run]);
 
   return (
     <>
-      <Title2>{t("setup.scan.title")}</Title2>
-      <Text>{t("setup.scan.desc")}</Text>
+      <h2>{t("setup.scan.title")}</h2>
+      <p>{t("setup.scan.desc")}</p>
       {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>{t("setup.scan.failed")} {error}</MessageBarBody>
-        </MessageBar>
+        <>
+          <MessageBar intent="error"><MessageBarBody>{t("setup.scan.failed")} {error}</MessageBarBody></MessageBar>
+          <Button onClick={() => setRun((n) => n + 1)}>{t("common.retry")}</Button>
+        </>
       )}
-      {error && <Button onClick={() => setRun((n) => n + 1)}>{t("common.retry")}</Button>}
       {!info && !error && (
         <>
           <ProgressBar />
-          <Text size={200}>{t("setup.scan.working")}</Text>
+          <p>{t("setup.scan.working")}</p>
         </>
       )}
-      {info && <Hardware info={info} />}
+      {info && <HardwareTiles info={info} />}
     </>
   );
 }
@@ -164,7 +134,7 @@ function RestoreStep({ ok, onOk }: { ok: boolean; onOk: () => void }) {
       await api.createSnapshot("Zanrei – first run");
       onOk();
     } catch (e) {
-      setError(String(e));
+      setError(errorText(e));
     } finally {
       setBusy(false);
     }
@@ -172,23 +142,23 @@ function RestoreStep({ ok, onOk }: { ok: boolean; onOk: () => void }) {
 
   return (
     <>
-      <Title2>{t("setup.restore.title")}</Title2>
-      <Text>{t("setup.restore.desc")}</Text>
+      <h2>{t("setup.restore.title")}</h2>
+      <p>{t("setup.restore.desc")}</p>
       {busy && <ProgressBar />}
       {ok ? (
         <MessageBar intent="success" icon={<ShieldCheckmark24Regular />}>
           <MessageBarBody>{t("setup.restore.done")}</MessageBarBody>
         </MessageBar>
       ) : (
-        <Button appearance="primary" disabled={busy} onClick={create}>
+        <Button appearance="primary" disabled={busy} onClick={() => void create()}>
           {busy ? t("setup.restore.creating") : t("setup.restore.create")}
         </Button>
       )}
       {error && (
         <MessageBar intent="error">
           <MessageBarBody>
-            <Subtitle1 as="p" block>{t("setup.restore.failed")}</Subtitle1>
-            <Text size={200} className="selectable">{error}</Text>
+            <b>{t("setup.restore.failed")}</b>
+            <div className="selectable" style={{ fontSize: 12, marginTop: 4 }}>{error}</div>
           </MessageBarBody>
         </MessageBar>
       )}

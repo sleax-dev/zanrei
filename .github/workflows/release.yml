@@ -22,13 +22,15 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22, cache: npm }
       - uses: dtolnay/rust-toolchain@v1
-        with: { toolchain: stable, targets: i686-pc-windows-msvc }
+        with: { toolchain: stable, targets: i686-pc-windows-msvc, components: "rustfmt, clippy" }
       - uses: Swatinem/rust-cache@v2
       - run: npm ci
-      - run: npx tsc
+      - run: npm run build # type-check and bundle the UI (the Tauri shell embeds dist/)
+      - run: npm run check:i18n # every UI string and every tweak has English and Turkish text
       - run: cargo fmt --all --check
       - run: cargo clippy -p zanrei-core -- -D warnings
       - run: cargo test -p zanrei-core
+      - run: cargo check -p zanrei --target i686-pc-windows-msvc
 
   # One installer for every supported Windows: a 32-bit (i686) build runs on both 32-bit and 64-bit
   # Windows 10/11. Windows 8.1 and older are not possible: WebView2 stopped at v109 and Rust's
@@ -45,9 +47,27 @@ jobs:
         with: { toolchain: stable, targets: i686-pc-windows-msvc }
       - uses: Swatinem/rust-cache@v2
       - run: npm ci
+
+      # Signed update packages (and latest.json) need the private key from the repository secrets.
+      # Without it the release still builds, but installed copies cannot update to it.
+      - name: Check for the updater signing key
+        id: updater
+        shell: bash
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "args=--config src-tauri/tauri.updater.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=" >> "$GITHUB_OUTPUT"
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY is not set. This release will not be offered as an automatic update."
+          fi
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Zanrei ${{ github.ref_name }}
@@ -55,6 +75,8 @@ jobs:
             Windows 10 / 11, 32-bit and 64-bit. Download the `*-setup.exe` and run it.
             Zanrei needs administrator rights (it creates restore points).
             The installer is not code-signed yet, so Windows SmartScreen may warn on first run.
+            Installed copies update themselves; see CHANGELOG.md for what changed.
           releaseDraft: false
           prerelease: false
-          args: --target i686-pc-windows-msvc --bundles nsis
+          includeUpdaterJson: true
+          args: --target i686-pc-windows-msvc --bundles nsis ${{ steps.updater.outputs.args }}

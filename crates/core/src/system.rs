@@ -45,6 +45,11 @@ pub fn tier(ram_bytes: u64, logical_cores: usize, has_ssd: bool, gpus: &[Gpu]) -
     }
 }
 
+/// Windows build number (e.g. 22631), 0 when unknown.
+pub fn os_build() -> u32 {
+    System::kernel_version().and_then(|v| v.parse().ok()).unwrap_or(0)
+}
+
 pub fn detect(platform: &dyn Platform) -> SystemInfo {
     let mut sys = System::new();
     sys.refresh_memory();
@@ -102,6 +107,7 @@ mod tests {
             name: "x".into(),
             vendor,
             driver_version: String::new(),
+            driver_date_unix: None,
             vram_bytes: None,
         }]
     }

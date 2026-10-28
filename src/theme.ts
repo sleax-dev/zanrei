@@ -1,9 +1,11 @@
 import { type BrandVariants, createDarkTheme, type Theme } from "@fluentui/react-components";
 
-// Brand colours live here (single source of truth). Orange is reserved for buttons and the logo; everything else
-// that Fluent would tint with the brand (links, focus, toggles, selection) uses the secondary blue.
-const ORANGE = "#FF6A1A";
-const BLUE = "#2074BA";
+// Brand colours live here (single source of truth). Orange is the accent everywhere an interface would
+// normally use blue: buttons, switches, selection, focus, links. Neutral surfaces stay near-black.
+export const ORANGE = "#FF6A1A";
+const ORANGE_HOVER = "#FF7E33";
+const ORANGE_PRESSED = "#E05606";
+const ORANGE_TEXT = "#FF8E4D"; // orange text on dark surfaces needs to be lighter to stay readable
 
 const brand: BrandVariants = {
   10: "#280F01", 20: "#411902", 30: "#5A2202", 40: "#772E03", 50: "#9A3B04", 60: "#BD4805", 70: "#E05606", 80: "#F9620B",
@@ -20,21 +22,23 @@ export const theme: Theme = {
   colorNeutralForeground1: "#F4F1EA",
   colorNeutralForeground2: "#D9D6CF",
   colorBrandBackground: ORANGE,
-  colorBrandBackgroundHover: "#FF7E33",
-  colorBrandBackgroundPressed: "#E05606",
+  colorBrandBackgroundHover: ORANGE_HOVER,
+  colorBrandBackgroundPressed: ORANGE_PRESSED,
   colorBrandBackgroundSelected: ORANGE,
   colorNeutralForegroundOnBrand: "#0B0B10", // white on #FF6A1A is only ~2.9:1; dark text passes AA
-  colorBrandForeground1: BLUE,
-  colorBrandForeground2: BLUE,
-  colorBrandForegroundLink: "#5BA3E0",
-  colorBrandForegroundLinkHover: "#7DB8EA",
-  colorBrandForegroundLinkPressed: "#4A93D0",
-  colorCompoundBrandBackground: BLUE,
-  colorCompoundBrandBackgroundHover: "#2B84D0",
-  colorCompoundBrandBackgroundPressed: "#1A5F99",
-  colorCompoundBrandForeground1: "#5BA3E0",
-  colorCompoundBrandStroke: BLUE,
-  colorBrandStroke1: BLUE,
+  colorBrandForeground1: ORANGE_TEXT,
+  colorBrandForeground2: ORANGE_TEXT,
+  colorBrandForegroundLink: ORANGE_TEXT,
+  colorBrandForegroundLinkHover: "#FFA166",
+  colorBrandForegroundLinkPressed: ORANGE_HOVER,
+  colorCompoundBrandBackground: ORANGE,
+  colorCompoundBrandBackgroundHover: ORANGE_HOVER,
+  colorCompoundBrandBackgroundPressed: ORANGE_PRESSED,
+  colorCompoundBrandForeground1: ORANGE_TEXT,
+  colorCompoundBrandForeground1Hover: "#FFA166",
+  colorCompoundBrandStroke: ORANGE,
+  colorCompoundBrandStrokeHover: ORANGE_HOVER,
+  colorBrandStroke1: ORANGE,
   colorStrokeFocus2: "#F4F1EA",
   colorStatusSuccessForeground1: "#3DDC97",
   colorStatusWarningForeground1: "#FFC94D",

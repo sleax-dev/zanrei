@@ -1,7 +1,7 @@
-import type { Locale } from "./en";
+import type { DeepPartial, Locale } from "./en";
 
 export default {
-  common: { next: "Далее", back: "Назад", finish: "Готово", retry: "Повторить", cancel: "Отмена", confirm: "Подтвердить" },
+  common: { next: "Далее", back: "Назад", finish: "Готово", retry: "Повторить", cancel: "Отмена", confirm: "Подтвердить", close: "Закрыть", loading: "Загрузка…", search: "Поиск" },
   setup: {
     language: { title: "Выберите язык", desc: "Позже его можно изменить в настройках." },
     scan: {
@@ -27,7 +27,8 @@ export default {
     },
     done: { title: "Всё готово", desc: "Zanrei готов к работе.", start: "Открыть Zanrei" },
   },
-  nav: { overview: "Обзор", restore: "Восстановление", settings: "Настройки" },
+  nav: { overview: "Обзор", restore: "Восстановление", settings: "Настройки", optimize: "Оптимизация", games: "Игры" },
+  titlebar: { background: "Свернуть в фон" },
   overview: {
     title: "Ваш ПК",
     cpu: "Процессор",
@@ -54,5 +55,5 @@ export default {
     confirmBody: "Все изменения, сохранённые в этой точке, будут отменены.",
     failed: "Что-то пошло не так",
   },
-  settings: { title: "Настройки", language: "Язык", mode: "Уровень автоматизации" },
-} satisfies Locale;
+  settings: { title: "Настройки", language: "Язык" },
+} satisfies DeepPartial<Locale>;

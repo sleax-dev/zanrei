@@ -1,6 +1,6 @@
-//! Snapshots = one OS restore point + a write-ahead journal of every registry value we change.
-//! No change may be made without a snapshot id, and the journal entry is written BEFORE the change,
-//! so a crash mid-way is still reversible.
+//! Snapshots = one OS restore point + a write-ahead journal of every change Zanrei makes
+//! (registry values, scheduled tasks, commands). No change may be made without a snapshot id, and the
+//! journal entry is written BEFORE the change, so a crash mid-way is still reversible.
 
 use crate::platform::{Platform, RegKey, RegValue};
 use crate::{Error, Result};
@@ -8,11 +8,22 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Entry {
-    pub key: RegKey,
-    /// `None` = the value did not exist before, rollback deletes it.
-    pub previous: Option<RegValue>,
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(tag = "kind")]
+pub enum Entry {
+    /// `previous: None` = the value did not exist before; rollback deletes it.
+    Reg {
+        key: RegKey,
+        previous: Option<RegValue>,
+    },
+    Task {
+        path: String,
+        was_enabled: bool,
+    },
+    /// A command whose effect is undone by running `revert` (program first, then arguments).
+    Cmd {
+        revert: Vec<String>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -88,35 +99,101 @@ impl Store {
         Ok(snap)
     }
 
-    /// The only way a registry value is allowed to change.
-    pub fn reg_set(&self, platform: &dyn Platform, id: &str, key: &RegKey, value: &RegValue) -> Result<()> {
-        let mut snap = self.get(id)?;
+    fn open(&self, id: &str) -> Result<Snapshot> {
+        let snap = self.get(id)?;
         if snap.rolled_back {
             return Err(Error::Msg("snapshot already rolled back".into()));
         }
+        Ok(snap)
+    }
+
+    /// The only way a registry value is allowed to change.
+    pub fn reg_set(&self, platform: &dyn Platform, id: &str, key: &RegKey, value: &RegValue) -> Result<()> {
+        self.journal_reg(platform, id, key)?;
+        platform.reg_set(key, value)
+    }
+
+    pub fn reg_delete(&self, platform: &dyn Platform, id: &str, key: &RegKey) -> Result<()> {
+        self.journal_reg(platform, id, key)?;
+        platform.reg_delete(key)
+    }
+
+    fn journal_reg(&self, platform: &dyn Platform, id: &str, key: &RegKey) -> Result<()> {
+        let mut snap = self.open(id)?;
         // First write wins: the original value must survive repeated changes to the same key.
-        if !snap.entries.iter().any(|e| e.key == *key) {
-            snap.entries.push(Entry {
+        let known = snap
+            .entries
+            .iter()
+            .any(|e| matches!(e, Entry::Reg { key: k, .. } if k == key));
+        if !known {
+            snap.entries.push(Entry::Reg {
                 key: key.clone(),
                 previous: platform.reg_get(key)?,
             });
             self.save(&snap)?;
         }
-        platform.reg_set(key, value)
+        Ok(())
+    }
+
+    /// Enables or disables a scheduled task. A task that does not exist is left alone.
+    pub fn task_set(&self, platform: &dyn Platform, id: &str, path: &str, enabled: bool) -> Result<()> {
+        let Some(was_enabled) = platform.task_enabled(path)? else {
+            return Ok(());
+        };
+        let mut snap = self.open(id)?;
+        if !snap
+            .entries
+            .iter()
+            .any(|e| matches!(e, Entry::Task { path: p, .. } if p == path))
+        {
+            snap.entries.push(Entry::Task {
+                path: path.into(),
+                was_enabled,
+            });
+            self.save(&snap)?;
+        }
+        platform.task_set_enabled(path, enabled)
+    }
+
+    /// Runs `apply` after journaling the command that undoes it.
+    pub fn cmd(&self, platform: &dyn Platform, id: &str, apply: &[&str], revert: &[&str]) -> Result<()> {
+        let mut snap = self.open(id)?;
+        snap.entries.push(Entry::Cmd {
+            revert: revert.iter().map(|s| s.to_string()).collect(),
+        });
+        self.save(&snap)?;
+        let (prog, args) = apply.split_first().ok_or_else(|| Error::Msg("empty command".into()))?;
+        platform.run(prog, args).map(|_| ())
     }
 
     /// Undoes entries newest-first. Keeps going on a failing entry and reports it at the end,
-    /// so one bad key can't block restoring the rest.
+    /// so one bad entry can't block restoring the rest.
     pub fn rollback(&self, platform: &dyn Platform, id: &str) -> Result<()> {
         let mut snap = self.get(id)?;
         let mut failed = vec![];
         for e in snap.entries.iter().rev() {
-            let r = match &e.previous {
-                Some(v) => platform.reg_set(&e.key, v),
-                None => platform.reg_delete(&e.key),
+            let (what, r) = match e {
+                Entry::Reg { key, previous } => (
+                    format!("{}\\{}", key.path, key.name),
+                    match previous {
+                        Some(v) => platform.reg_set(key, v),
+                        None => platform.reg_delete(key),
+                    },
+                ),
+                Entry::Task { path, was_enabled } => (path.clone(), platform.task_set_enabled(path, *was_enabled)),
+                Entry::Cmd { revert } => (
+                    revert.join(" "),
+                    match revert.split_first() {
+                        Some((prog, args)) => {
+                            let args: Vec<&str> = args.iter().map(String::as_str).collect();
+                            platform.run(prog, &args).map(|_| ())
+                        }
+                        None => Ok(()),
+                    },
+                ),
             };
             if let Err(err) = r {
-                failed.push(format!("{}\\{}: {err}", e.key.path, e.key.name));
+                failed.push(format!("{what}: {err}"));
             }
         }
         if !failed.is_empty() {
@@ -128,19 +205,24 @@ impl Store {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::platform::{Gpu, Hive};
     use std::collections::HashMap;
     use std::sync::Mutex;
 
+    /// In-memory stand-in for the OS, shared by the tests of every module.
     #[derive(Default)]
-    struct Fake {
-        reg: Mutex<HashMap<String, RegValue>>,
-        fail_restore_point: bool,
+    pub struct Fake {
+        pub reg: Mutex<HashMap<String, RegValue>>,
+        pub tasks: Mutex<HashMap<String, bool>>,
+        pub ran: Mutex<Vec<String>>,
+        pub fail_restore_point: bool,
+        pub edge: Mutex<bool>,
+        pub apps: Mutex<Vec<String>>,
     }
 
-    fn k(key: &RegKey) -> String {
+    pub fn k(key: &RegKey) -> String {
         format!("{:?}\\{}\\{}", key.hive, key.path, key.name)
     }
 
@@ -159,6 +241,9 @@ mod tests {
             self.reg.lock().unwrap().remove(&k(key));
             Ok(())
         }
+        fn reg_subkeys(&self, _: Hive, _: &str) -> Result<Vec<String>> {
+            Ok(vec![])
+        }
         fn create_restore_point(&self, _: &str) -> Result<()> {
             if self.fail_restore_point {
                 Err(Error::Msg("disabled by policy".into()))
@@ -169,14 +254,52 @@ mod tests {
         fn open_system_restore(&self) -> Result<()> {
             Ok(())
         }
+        fn run(&self, program: &str, args: &[&str]) -> Result<String> {
+            let line = format!("{program} {}", args.join(" "));
+            self.ran.lock().unwrap().push(line.clone());
+            Ok(match line.as_str() {
+                "powercfg /getactivescheme" => {
+                    "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced)".into()
+                }
+                _ => String::new(),
+            })
+        }
+        fn task_enabled(&self, path: &str) -> Result<Option<bool>> {
+            Ok(self.tasks.lock().unwrap().get(path).copied())
+        }
+        fn task_set_enabled(&self, path: &str, enabled: bool) -> Result<()> {
+            self.tasks.lock().unwrap().insert(path.into(), enabled);
+            Ok(())
+        }
+        fn edge_installed(&self) -> bool {
+            *self.edge.lock().unwrap()
+        }
+        fn remove_edge(&self) -> Result<()> {
+            *self.edge.lock().unwrap() = false;
+            Ok(())
+        }
+        fn reinstall_edge(&self) -> Result<()> {
+            *self.edge.lock().unwrap() = true;
+            Ok(())
+        }
+        fn installed_apps(&self, names: &[&str]) -> Result<Vec<String>> {
+            Ok(self
+                .apps
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|a| names.contains(&a.as_str()))
+                .cloned()
+                .collect())
+        }
+        fn remove_apps(&self, names: &[&str]) -> Result<()> {
+            self.apps.lock().unwrap().retain(|a| !names.contains(&a.as_str()));
+            Ok(())
+        }
     }
 
-    fn key(name: &str) -> RegKey {
-        RegKey {
-            hive: Hive::Hkcu,
-            path: "Software\\Zanrei".into(),
-            name: name.into(),
-        }
+    pub fn key(name: &str) -> RegKey {
+        RegKey::new(Hive::Hkcu, "Software\\Zanrei", name)
     }
 
     #[test]
@@ -198,6 +321,30 @@ mod tests {
         assert_eq!(p.reg_get(&key("B")).unwrap(), None);
         assert!(store.get(&s.id).unwrap().rolled_back);
         assert!(store.reg_set(&p, &s.id, &key("A"), &RegValue::Dword(9)).is_err());
+    }
+
+    #[test]
+    fn rollback_restores_deleted_values_tasks_and_commands() {
+        let dir = tempfile::tempdir().unwrap();
+        let (store, p) = (Store::new(dir.path().into()), Fake::default());
+        p.reg_set(&key("A"), &RegValue::Binary(vec![1, 2])).unwrap();
+        p.tasks.lock().unwrap().insert("\\T".into(), true);
+
+        let s = store.create(&p, "test").unwrap();
+        store.reg_delete(&p, &s.id, &key("A")).unwrap();
+        store.task_set(&p, &s.id, "\\T", false).unwrap();
+        store.task_set(&p, &s.id, "\\Missing", false).unwrap(); // absent task: silently skipped
+        store
+            .cmd(&p, &s.id, &["powercfg", "/h", "off"], &["powercfg", "/h", "on"])
+            .unwrap();
+        assert_eq!(p.reg_get(&key("A")).unwrap(), None);
+        assert_eq!(p.task_enabled("\\T").unwrap(), Some(false));
+        assert_eq!(store.get(&s.id).unwrap().entries.len(), 3);
+
+        store.rollback(&p, &s.id).unwrap();
+        assert_eq!(p.reg_get(&key("A")).unwrap(), Some(RegValue::Binary(vec![1, 2])));
+        assert_eq!(p.task_enabled("\\T").unwrap(), Some(true));
+        assert_eq!(p.ran.lock().unwrap().last().unwrap(), "powercfg /h on");
     }
 
     #[test]

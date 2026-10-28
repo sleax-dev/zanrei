@@ -1,7 +1,7 @@
-import type { Locale } from "./en";
+import type { DeepPartial, Locale } from "./en";
 
 export default {
-  common: { next: "Weiter", back: "Zurück", finish: "Fertig", retry: "Erneut versuchen", cancel: "Abbrechen", confirm: "Bestätigen" },
+  common: { next: "Weiter", back: "Zurück", finish: "Fertig", retry: "Erneut versuchen", cancel: "Abbrechen", confirm: "Bestätigen", close: "Schließen", loading: "Wird geladen…", search: "Suchen" },
   setup: {
     language: { title: "Sprache wählen", desc: "Du kannst das später in den Einstellungen ändern." },
     scan: {
@@ -27,7 +27,8 @@ export default {
     },
     done: { title: "Alles bereit", desc: "Zanrei ist startklar.", start: "Zanrei öffnen" },
   },
-  nav: { overview: "Übersicht", restore: "Wiederherstellen", settings: "Einstellungen" },
+  nav: { overview: "Übersicht", restore: "Wiederherstellen", settings: "Einstellungen", optimize: "Optimieren", games: "Spiele" },
+  titlebar: { background: "In den Hintergrund" },
   overview: {
     title: "Dein PC",
     cpu: "Prozessor",
@@ -54,5 +55,5 @@ export default {
     confirmBody: "Alle in diesem Punkt gespeicherten Änderungen werden zurückgesetzt.",
     failed: "Etwas ist schiefgelaufen",
   },
-  settings: { title: "Einstellungen", language: "Sprache", mode: "Automatisierungsstufe" },
-} satisfies Locale;
+  settings: { title: "Einstellungen", language: "Sprache" },
+} satisfies DeepPartial<Locale>;

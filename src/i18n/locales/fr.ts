@@ -1,7 +1,7 @@
-import type { Locale } from "./en";
+import type { DeepPartial, Locale } from "./en";
 
 export default {
-  common: { next: "Suivant", back: "Retour", finish: "Terminer", retry: "Réessayer", cancel: "Annuler", confirm: "Confirmer" },
+  common: { next: "Suivant", back: "Retour", finish: "Terminer", retry: "Réessayer", cancel: "Annuler", confirm: "Confirmer", close: "Fermer", loading: "Chargement…", search: "Rechercher" },
   setup: {
     language: { title: "Choisis ta langue", desc: "Tu pourras la modifier plus tard dans les Paramètres." },
     scan: {
@@ -27,7 +27,8 @@ export default {
     },
     done: { title: "Tout est prêt", desc: "Zanrei est prêt.", start: "Ouvrir Zanrei" },
   },
-  nav: { overview: "Aperçu", restore: "Restaurer", settings: "Paramètres" },
+  nav: { overview: "Aperçu", restore: "Restaurer", settings: "Paramètres", optimize: "Optimiser", games: "Jeux" },
+  titlebar: { background: "Envoyer en arrière-plan" },
   overview: {
     title: "Ton PC",
     cpu: "Processeur",
@@ -54,5 +55,5 @@ export default {
     confirmBody: "Toutes les modifications enregistrées dans ce point seront annulées.",
     failed: "Une erreur s'est produite",
   },
-  settings: { title: "Paramètres", language: "Langue", mode: "Niveau d'automatisation" },
-} satisfies Locale;
+  settings: { title: "Paramètres", language: "Langue" },
+} satisfies DeepPartial<Locale>;

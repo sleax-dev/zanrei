@@ -2,17 +2,20 @@
   "name": "zanrei",
   "private": true,
   "description": "Windows optimization with a mandatory undo.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "check:i18n": "node --experimental-strip-types scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@fluentui/react-components": "^9.75.0",
     "@fluentui/react-icons": "^2.0.344",
     "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/plugin-dialog": "^2.8.4",
+    "@tauri-apps/plugin-opener": "^2.7.2",
     "@tauri-apps/plugin-os": "^2.4.0",
     "i18next": "^26.5.11",
     "motion": "^14.7.1",
