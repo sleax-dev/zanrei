@@ -1,10 +1,10 @@
 use crate::Result;
 use serde::{Deserialize, Serialize};
 
-#[cfg(windows)]
-mod windows;
 #[cfg(not(windows))]
 mod other;
+#[cfg(windows)]
+mod windows;
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Hive {

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
-use winreg::{enums::*, RegKey as WinKey};
+use winreg::{RegKey as WinKey, enums::*};
 
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
@@ -15,7 +15,11 @@ pub struct Windows;
 fn system_tool(rel: &str) -> PathBuf {
     let win = PathBuf::from(std::env::var_os("WINDIR").unwrap_or_else(|| "C:\\Windows".into()));
     let native = win.join("Sysnative");
-    let base = if cfg!(target_pointer_width = "32") && native.exists() { native } else { win.join("System32") };
+    let base = if cfg!(target_pointer_width = "32") && native.exists() {
+        native
+    } else {
+        win.join("System32")
+    };
     base.join(rel)
 }
 
@@ -26,7 +30,13 @@ const VIEW: u32 = KEY_WOW64_64KEY;
 /// Inputs are passed via env vars, never interpolated into the script.
 fn powershell(script: &str, label: &str) -> Result<String> {
     let out = Command::new(system_tool(r"WindowsPowerShell\v1.0\powershell.exe"))
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command"])
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+        ])
         .arg(format!("[Console]::OutputEncoding=[Text.Encoding]::UTF8; {script}"))
         .env("ZANREI_LABEL", label)
         .creation_flags(CREATE_NO_WINDOW)
@@ -137,7 +147,9 @@ finally { if ($null -eq $old) { Remove-ItemProperty $k $n -ErrorAction SilentlyC
     }
 
     fn open_system_restore(&self) -> Result<()> {
-        Command::new(system_tool("rstrui.exe")).creation_flags(CREATE_NO_WINDOW).spawn()?;
+        Command::new(system_tool("rstrui.exe"))
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()?;
         Ok(())
     }
 }

@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 use tauri::{
-    window::{Effect, EffectsBuilder},
     Manager, State,
+    window::{Effect, EffectsBuilder},
 };
 use zanrei_core::{
     platform::{self, Platform},
@@ -23,7 +23,10 @@ type Res<T> = Result<T, String>;
 
 /// Everything below shells out to PowerShell or touches disk, so keep it off the UI thread.
 async fn blocking<T: Send + 'static>(f: impl FnOnce() -> zanrei_core::Result<T> + Send + 'static) -> Res<T> {
-    tauri::async_runtime::spawn_blocking(f).await.map_err(|e| e.to_string())?.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -78,10 +81,16 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             let mica = app.get_webview_window("main").is_some_and(|w| {
-                w.set_effects(EffectsBuilder::new().effect(Effect::Mica).build()).is_ok()
+                w.set_effects(EffectsBuilder::new().effect(Effect::Mica).build())
+                    .is_ok()
             });
             let dir = app.path().app_data_dir()?;
-            app.manage(AppState { platform: Arc::from(platform::current()), store: Store::new(dir.clone()), dir, mica });
+            app.manage(AppState {
+                platform: Arc::from(platform::current()),
+                store: Store::new(dir.clone()),
+                dir,
+                mica,
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

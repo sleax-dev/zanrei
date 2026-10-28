@@ -26,7 +26,10 @@ const FILE: &str = "settings.json";
 
 pub fn load(dir: &Path) -> Settings {
     // A missing or corrupt file means first run, not a crash.
-    std::fs::read(dir.join(FILE)).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+    std::fs::read(dir.join(FILE))
+        .ok()
+        .and_then(|b| serde_json::from_slice(&b).ok())
+        .unwrap_or_default()
 }
 
 pub fn save(dir: &Path, s: &Settings) -> Result<()> {
@@ -45,7 +48,11 @@ mod tests {
     fn roundtrip_and_corrupt() {
         let d = tempfile::tempdir().unwrap();
         assert_eq!(load(d.path()), Settings::default());
-        let s = Settings { language: Some("tr".into()), setup_done: true, mode: Mode::Auto };
+        let s = Settings {
+            language: Some("tr".into()),
+            setup_done: true,
+            mode: Mode::Auto,
+        };
         save(d.path(), &s).unwrap();
         assert_eq!(load(d.path()), s);
         std::fs::write(d.path().join(FILE), b"{oops").unwrap();

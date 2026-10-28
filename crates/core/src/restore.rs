@@ -31,7 +31,9 @@ pub struct Store {
 
 impl Store {
     pub fn new(dir: PathBuf) -> Self {
-        Self { dir: dir.join("snapshots") }
+        Self {
+            dir: dir.join("snapshots"),
+        }
     }
 
     fn path(&self, id: &str) -> PathBuf {
@@ -94,7 +96,10 @@ impl Store {
         }
         // First write wins: the original value must survive repeated changes to the same key.
         if !snap.entries.iter().any(|e| e.key == *key) {
-            snap.entries.push(Entry { key: key.clone(), previous: platform.reg_get(key)? });
+            snap.entries.push(Entry {
+                key: key.clone(),
+                previous: platform.reg_get(key)?,
+            });
             self.save(&snap)?;
         }
         platform.reg_set(key, value)
@@ -155,7 +160,11 @@ mod tests {
             Ok(())
         }
         fn create_restore_point(&self, _: &str) -> Result<()> {
-            if self.fail_restore_point { Err(Error::Msg("disabled by policy".into())) } else { Ok(()) }
+            if self.fail_restore_point {
+                Err(Error::Msg("disabled by policy".into()))
+            } else {
+                Ok(())
+            }
         }
         fn open_system_restore(&self) -> Result<()> {
             Ok(())
@@ -163,7 +172,11 @@ mod tests {
     }
 
     fn key(name: &str) -> RegKey {
-        RegKey { hive: Hive::Hkcu, path: "Software\\Zanrei".into(), name: name.into() }
+        RegKey {
+            hive: Hive::Hkcu,
+            path: "Software\\Zanrei".into(),
+            name: name.into(),
+        }
     }
 
     #[test]
@@ -175,7 +188,9 @@ mod tests {
         let s = store.create(&p, "test").unwrap();
         store.reg_set(&p, &s.id, &key("A"), &RegValue::Dword(2)).unwrap();
         store.reg_set(&p, &s.id, &key("A"), &RegValue::Dword(3)).unwrap(); // second write must not overwrite the original
-        store.reg_set(&p, &s.id, &key("B"), &RegValue::String("x".into())).unwrap();
+        store
+            .reg_set(&p, &s.id, &key("B"), &RegValue::String("x".into()))
+            .unwrap();
         assert_eq!(p.reg_get(&key("A")).unwrap(), Some(RegValue::Dword(3)));
 
         store.rollback(&p, &s.id).unwrap();
@@ -188,7 +203,13 @@ mod tests {
     #[test]
     fn no_snapshot_when_restore_point_fails() {
         let dir = tempfile::tempdir().unwrap();
-        let (store, p) = (Store::new(dir.path().into()), Fake { fail_restore_point: true, ..Default::default() });
+        let (store, p) = (
+            Store::new(dir.path().into()),
+            Fake {
+                fail_restore_point: true,
+                ..Default::default()
+            },
+        );
         assert!(store.create(&p, "test").is_err());
         assert!(store.list().is_empty());
     }

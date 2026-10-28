@@ -1,0 +1,42 @@
+name: Hata bildirimi
+description: Bir şey beklediğin gibi çalışmadı
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Ne oldu?
+      description: Ne bekliyordun, ne gördün? Hata mesajı varsa aynen yaz.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Nasıl yeniden üretilir?
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Zanrei sürümü
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows sürümü ve mimarisi
+      placeholder: "Windows 10 22H2, 64 bit"
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Donanım (işlemci, bellek, ekran kartı)
+  - type: checkboxes
+    id: restore
+    attributes:
+      label: Geri yükleme
+      options:
+        - label: Sorun, geri yükleme noktası veya geri alma ile ilgili

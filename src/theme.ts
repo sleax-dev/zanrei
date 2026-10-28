@@ -1,6 +1,6 @@
 import { type BrandVariants, createDarkTheme, type Theme } from "@fluentui/react-components";
 
-// Colours come from README.md. Orange is reserved for buttons and the logo; everything else
+// Brand colours live here (single source of truth). Orange is reserved for buttons and the logo; everything else
 // that Fluent would tint with the brand (links, focus, toggles, selection) uses the secondary blue.
 const ORANGE = "#FF6A1A";
 const BLUE = "#2074BA";

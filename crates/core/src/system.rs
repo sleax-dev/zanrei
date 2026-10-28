@@ -49,7 +49,11 @@ pub fn detect(platform: &dyn Platform) -> SystemInfo {
     let mut sys = System::new();
     sys.refresh_memory();
     sys.refresh_cpu_all();
-    let cpu_name = sys.cpus().first().map(|c| c.brand().trim().to_string()).unwrap_or_default();
+    let cpu_name = sys
+        .cpus()
+        .first()
+        .map(|c| c.brand().trim().to_string())
+        .unwrap_or_default();
     let logical_cores = sys.cpus().len();
     let physical_cores = System::physical_core_count().unwrap_or(logical_cores);
 
@@ -94,7 +98,12 @@ mod tests {
     use super::*;
 
     fn gpu(vendor: Vendor) -> Vec<Gpu> {
-        vec![Gpu { name: "x".into(), vendor, driver_version: String::new(), vram_bytes: None }]
+        vec![Gpu {
+            name: "x".into(),
+            vendor,
+            driver_version: String::new(),
+            vram_bytes: None,
+        }]
     }
 
     #[test]
