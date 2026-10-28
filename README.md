@@ -1,7 +1,7 @@
 # Zanrei
 
-[![Build](https://github.com/thesleax/zanrei/actions/workflows/release.yml/badge.svg)](https://github.com/thesleax/zanrei/actions/workflows/release.yml)
-[![Release](https://img.shields.io/github/v/release/thesleax/zanrei?include_prereleases)](https://github.com/thesleax/zanrei/releases)
+[![Build](https://github.com/sleax-dev/zanrei/actions/workflows/release.yml/badge.svg)](https://github.com/sleax-dev/zanrei/actions/workflows/release.yml)
+[![Release](https://img.shields.io/github/v/release/sleax-dev/zanrei?include_prereleases)](https://github.com/sleax-dev/zanrei/releases)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4)
 
 A Windows optimization app where every change can be undone.
@@ -30,7 +30,7 @@ Windows 8.1 and older are not supported.
 
 ## Installation
 
-1. Download the latest `Zanrei_<version>_x86-setup.exe` from [Releases](https://github.com/thesleax/zanrei/releases).
+1. Download the latest `Zanrei_<version>_x86-setup.exe` from [Releases](https://github.com/sleax-dev/zanrei/releases).
 2. Run it and follow the installer. The same installer works on 32-bit and 64-bit Windows.
 3. Start Zanrei. The setup wizard opens on first launch.
 

@@ -6,7 +6,7 @@ Zanrei runs with administrator rights and changes Windows settings, so we take s
 
 Please **do not open a public issue** for security problems. Use GitHub's private reporting instead:
 
-**Security → Report a vulnerability** (`https://github.com/thesleax/zanrei/security/advisories/new`)
+**Security → Report a vulnerability** (`https://github.com/sleax-dev/zanrei/security/advisories/new`)
 
 Include:
 - What the problem is and its impact
