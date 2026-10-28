@@ -1,22 +1,24 @@
-# Güvenlik politikası
+# Security Policy
 
-Zanrei yönetici yetkisiyle çalışır ve Windows ayarlarını değiştirir. Güvenlik sorunlarını ciddiye alıyoruz.
+Zanrei runs with administrator rights and changes Windows settings, so we take security reports seriously.
 
-## Açık bildirme
-Güvenlik açıklarını **herkese açık issue olarak açma.** GitHub'ın özel bildirim özelliğini kullan:
+## Reporting a vulnerability
 
-**Security → Report a vulnerability** (bu depoda `https://github.com/thesleax/zanrei/security/advisories/new`)
+Please **do not open a public issue** for security problems. Use GitHub's private reporting instead:
 
-Bildirimde şunları yaz:
-- Sorunun ne olduğu ve etkisi
-- Nasıl yeniden üretileceği (sürüm, Windows sürümü, adımlar)
-- Varsa önerdiğin çözüm
+**Security → Report a vulnerability** (`https://github.com/thesleax/zanrei/security/advisories/new`)
 
-## Kapsam
-Özellikle şunlar önemlidir:
-- Yönetici yetkisinin kötüye kullanılması (komut enjeksiyonu, yol aşma)
-- Geri yükleme günlüğünün bozulması veya geri almanın kullanıcının sisteminde beklenmeyen değişiklik yapması
-- Kullanıcının bilgisi dışında sistem değişikliği yapılması
+Include:
+- What the problem is and its impact
+- How to reproduce it (Zanrei version, Windows version, steps)
+- A suggested fix, if you have one
 
-## Desteklenen sürümler
-Yalnızca en son yayımlanan sürüm düzeltme alır.
+## What matters most
+
+- Misuse of administrator rights (command injection, path traversal)
+- A corrupted restore journal, or an undo that changes the system in unexpected ways
+- Any system change made without the user's knowledge
+
+## Supported versions
+
+Only the latest release receives fixes.

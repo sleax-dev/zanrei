@@ -1,10 +1,10 @@
-## Ne değişti ve neden?
+## What changed and why?
 
-## Kontrol listesi
-- [ ] `npx tsc`, `cargo fmt --all --check`, `cargo clippy -p zanrei-core -- -D warnings`, `cargo test -p zanrei-core` geçiyor
-- [ ] Sistemi değiştiren her şey anlık görüntüden geçiyor ve geri alınabiliyor
-- [ ] Değiştirdiğim paylaşılan şeyin diğer kullanıcılarını kontrol ettim
-- [ ] Yeni kullanıcı metinleri çeviri dosyalarında
-- [ ] Windows'ta denedim (denemediysem aşağıda yazdım)
+## Checklist
+- [ ] `npx tsc`, `cargo fmt --all --check`, `cargo clippy -p zanrei-core -- -D warnings` and `cargo test -p zanrei-core` pass
+- [ ] Every system change goes through a snapshot and can be undone
+- [ ] I checked the other users of anything shared that I changed
+- [ ] New user-facing text is in the translation files
+- [ ] I tested on Windows (if not, noted below)
 
-## Notlar
+## Notes

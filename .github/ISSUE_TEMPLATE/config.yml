@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Güvenlik açığı bildirimi
+  - name: Report a security vulnerability
     url: https://github.com/thesleax/zanrei/security/advisories/new
-    about: Güvenlik sorunlarını herkese açık issue olarak açma, buradan özel bildir.
+    about: Please do not open public issues for security problems; report them privately here.

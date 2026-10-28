@@ -1,42 +1,42 @@
-name: Hata bildirimi
-description: Bir şey beklediğin gibi çalışmadı
+name: Bug report
+description: Something did not work as expected
 labels: [bug]
 body:
   - type: textarea
     id: what
     attributes:
-      label: Ne oldu?
-      description: Ne bekliyordun, ne gördün? Hata mesajı varsa aynen yaz.
+      label: What happened?
+      description: What did you expect, and what did you see instead? Include any error message verbatim.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Nasıl yeniden üretilir?
+      label: Steps to reproduce
       placeholder: "1. ...\n2. ...\n3. ..."
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: Zanrei sürümü
+      label: Zanrei version
       placeholder: "0.1.0"
     validations:
       required: true
   - type: input
     id: windows
     attributes:
-      label: Windows sürümü ve mimarisi
-      placeholder: "Windows 10 22H2, 64 bit"
+      label: Windows version and architecture
+      placeholder: "Windows 10 22H2, 64-bit"
     validations:
       required: true
   - type: textarea
     id: hardware
     attributes:
-      label: Donanım (işlemci, bellek, ekran kartı)
+      label: Hardware (processor, memory, graphics card)
   - type: checkboxes
     id: restore
     attributes:
-      label: Geri yükleme
+      label: Restore
       options:
-        - label: Sorun, geri yükleme noktası veya geri alma ile ilgili
+        - label: The problem involves restore points or undo

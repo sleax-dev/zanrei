@@ -1,15 +1,15 @@
-# Değişiklik geçmişi
+# Changelog
 
-Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) tabanlıdır, sürümleme [SemVer](https://semver.org/lang/tr/) izler.
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - Yayımlanmadı
+## [0.1.0] - 2026-10-28
 
-İlk sürüm: temel.
+First release: the foundation.
 
-### Eklendi
-- Kurulum sihirbazı (dil, donanım taraması, geri yükleme noktası, otomasyon seviyesi).
-- Donanım tespiti: işletim sistemi, işlemci, bellek, ekran kartları, diskler; performans sınıfı.
-- Zorunlu geri yükleme: Windows geri yükleme noktası ve kayıt defteri günlüğü, uygulama içinden geri alma.
-- Arayüz: Fluent UI v9, Windows 11'de Mica, Motion animasyonları.
-- 10 arayüz dili, sistem dilinden otomatik seçim.
-- Tek 32 bit NSIS kurulum dosyası (Windows 10/11, 32 ve 64 bit).
+### Added
+- Setup wizard: language, hardware scan, first restore point, automation level.
+- Hardware detection: operating system, processor, memory, graphics cards, drives, performance class.
+- Mandatory restore: Windows restore point plus a registry journal, with undo from inside the app.
+- Interface built with Fluent UI v9, Mica on Windows 11 and Motion animations.
+- 10 interface languages, selected automatically from the system language.
+- A single 32-bit NSIS installer for Windows 10 and 11 (32-bit and 64-bit).

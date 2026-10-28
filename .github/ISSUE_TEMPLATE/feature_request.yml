@@ -1,21 +1,21 @@
-name: Özellik isteği
-description: Zanrei'ye yeni bir şey eklenmesini öner
+name: Feature request
+description: Suggest something new for Zanrei
 labels: [enhancement]
 body:
   - type: textarea
     id: problem
     attributes:
-      label: Hangi sorunu çözüyor?
+      label: What problem does it solve?
     validations:
       required: true
   - type: textarea
     id: idea
     attributes:
-      label: Önerin
+      label: Your proposal
     validations:
       required: true
   - type: textarea
     id: undo
     attributes:
-      label: Nasıl geri alınır?
-      description: Sistemi değiştiren bir öneriyse eski haline nasıl döndürülür?
+      label: How can it be undone?
+      description: If it changes the system, how is the original state restored?
