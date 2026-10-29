@@ -44,11 +44,18 @@ enum Location {
 
 const APPROVED: &str = r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved";
 
+// Tests run against a fake registry; the real Startup folders of the machine running them must not leak in.
 fn user_folder() -> Option<PathBuf> {
+    if cfg!(test) {
+        return None;
+    }
     std::env::var_os("APPDATA").map(|d| PathBuf::from(d).join(r"Microsoft\Windows\Start Menu\Programs\Startup"))
 }
 
 fn common_folder() -> Option<PathBuf> {
+    if cfg!(test) {
+        return None;
+    }
     std::env::var_os("ProgramData").map(|d| PathBuf::from(d).join(r"Microsoft\Windows\Start Menu\Programs\StartUp"))
 }
 
