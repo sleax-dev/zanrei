@@ -1,7 +1,9 @@
 import { Button, Spinner } from "@fluentui/react-components";
 import { CheckmarkCircle20Regular, Warning16Regular } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
+import { LivePanel } from "../components/LivePanel";
 import { PcSummary } from "../components/PcSummary";
+import { Skeleton, SkeletonFacts } from "../components/Skeleton";
 import { useApp } from "../state";
 
 export function Overview() {
@@ -16,8 +18,8 @@ export function Overview() {
   return (
     <div className="page">
       <section className="lead">
-        <h1>{loading ? t("overview.loading") : t(`overview.tier.${system.tier}`)}</h1>
-        {!loading && (
+        {loading ? <Skeleton w={320} h={34} r={8} /> : <h1>{t(`overview.tier.${system.tier}`)}</h1>}
+        {loading ? <div style={{ marginTop: 14 }}><Skeleton w={240} h={14} /></div> : (
           <p>
             {todo.length ? (
               t("overview.summaryTodo", { count: todo.length })
@@ -49,12 +51,12 @@ export function Overview() {
         </section>
       )}
 
-      {system && (
-        <section className="panel">
-          <div className="sect-head"><h2>{t("overview.title")}</h2></div>
-          <PcSummary info={system} />
-        </section>
-      )}
+      <LivePanel />
+
+      <section className="panel">
+        <div className="sect-head"><h2>{t("overview.title")}</h2></div>
+        {system ? <PcSummary info={system} /> : <SkeletonFacts count={5} status={t("overview.loading")} />}
+      </section>
     </div>
   );
 }

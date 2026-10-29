@@ -34,7 +34,18 @@ pub fn active_scheme(p: &dyn Platform) -> Result<String> {
     find_guid(&out).ok_or_else(|| Error::Msg("could not read the active power plan".into()))
 }
 
+/// Laptops with Modern Standby often ship without the High performance plan; this makes it again under its own id.
+pub fn ensure_high_performance(p: &dyn Platform) -> Result<()> {
+    if p.run("powercfg", &["/query", HIGH_PERFORMANCE]).is_err() {
+        p.run("powercfg", &["/duplicatescheme", HIGH_PERFORMANCE, HIGH_PERFORMANCE])?;
+    }
+    Ok(())
+}
+
 pub fn set_scheme(p: &dyn Platform, guid: &str) -> Result<()> {
+    if guid == HIGH_PERFORMANCE {
+        ensure_high_performance(p)?;
+    }
     p.run("powercfg", &["/setactive", guid]).map(|_| ())
 }
 

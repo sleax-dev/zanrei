@@ -14,6 +14,11 @@ export default {
     "search": "Buscar"
   },
   "setup": {
+    "steps": {
+      "welcome": "Bienvenida",
+      "recommend": "Recomendado",
+      "done": "Listo"
+    },
     "scan": {
       "working": "Analizando…"
     },
@@ -43,8 +48,13 @@ export default {
     "restore": "Restaurar",
     "settings": "Ajustes"
   },
+  "splash": {
+    "tagline": "Windows, a tu medida. Todo cambio se puede deshacer."
+  },
   "titlebar": {
-    "background": "Enviar a segundo plano"
+    "minimize": "Minimizar",
+    "close": "Cerrar",
+    "closeToTray": "Cerrar (sigue en segundo plano)"
   },
   "overview": {
     "title": "Tu PC",

@@ -1,23 +1,28 @@
-import { ArrowMinimize16Regular } from "@fluentui/react-icons";
+import { Dismiss16Regular, Subtract16Regular } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { useApp } from "../state";
 import { Logo } from "./Logo";
 
-/** Windows 11 style caption area. No maximize or close on purpose: the only action is "send to background". */
+/** Windows 11 style caption area: drag region, minimize to the taskbar, close. The window has a fixed size, so there is no maximize. */
 export function TitleBar() {
   const { t } = useTranslation();
-  const { boost } = useApp();
+  const { boost, settings } = useApp();
+  // Close keeps Zanrei in the tray only once setup is done and background mode is on (see on_window_event).
+  const closeLabel = settings.setup_done && settings.run_in_background ? t("titlebar.closeToTray") : t("titlebar.close");
   return (
     <div className="titlebar" data-tauri-drag-region>
       <span className="brand">
-        <Logo />
+        <Logo width={22} />
         <span>Zanrei</span>
       </span>
       {boost.active && <span className="pill accent">{t("titlebar.boost", { game: boost.game ?? "" })}</span>}
       <span className="grow" data-tauri-drag-region />
-      <button className="tb-btn" title={t("titlebar.background")} aria-label={t("titlebar.background")} onClick={() => void api.sendToBackground()}>
-        <ArrowMinimize16Regular />
+      <button className="tb-btn" title={t("titlebar.minimize")} aria-label={t("titlebar.minimize")} onClick={() => void api.minimizeWindow()}>
+        <Subtract16Regular />
+      </button>
+      <button className="tb-btn close" title={closeLabel} aria-label={closeLabel} onClick={() => void api.closeWindow()}>
+        <Dismiss16Regular />
       </button>
     </div>
   );

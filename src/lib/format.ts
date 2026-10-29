@@ -10,3 +10,10 @@ export const fmtDay = (unixMs: number, lang: string) => new Date(unixMs).toLocal
 /** Compact form for tight spots ("10/28/26, 3:06 PM"). */
 export const fmtShort = (unixSeconds: number, lang: string) =>
   new Date(unixSeconds * 1000).toLocaleString(lang, { dateStyle: "short", timeStyle: "short" });
+
+/** File sizes the way people read them: "340 MB", "1.2 GB". */
+export function fmtBytes(bytes: number): string {
+  if (bytes >= 2 ** 30) return `${(bytes / 2 ** 30).toFixed(1)} GB`;
+  if (bytes >= 2 ** 20) return `${Math.round(bytes / 2 ** 20)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}

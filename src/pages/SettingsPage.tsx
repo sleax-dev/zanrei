@@ -28,7 +28,6 @@ export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { settings, savePrefs, update, checkForUpdate, installUpdate, toast } = useApp();
   const [autostart, setAutostart] = useState<boolean | null>(null);
-  const [cleaning, setCleaning] = useState(false);
 
   useEffect(() => void api.getAutostart().then(setAutostart, () => setAutostart(false)), []);
 
@@ -39,18 +38,6 @@ export function SettingsPage() {
     } catch (e) {
       setAutostart(!on);
       toast(errorText(e), "error");
-    }
-  };
-
-  const clean = async () => {
-    setCleaning(true);
-    try {
-      const bytes = await api.cleanTemp();
-      toast(t("settings.cleaned", { size: (bytes / 2 ** 20).toFixed(1) }), "success");
-    } catch (e) {
-      toast(errorText(e), "error");
-    } finally {
-      setCleaning(false);
     }
   };
 
@@ -122,9 +109,6 @@ export function SettingsPage() {
       <section className="stack">
         <div className="sect-head"><h2>{t("settings.tools")}</h2></div>
         <div className="rows">
-          <Setting title={t("settings.cleanTemp")} desc={t("settings.cleanTempDesc")}>
-            <Button disabled={cleaning} onClick={() => void clean()}>{cleaning ? t("settings.cleaning") : t("settings.clean")}</Button>
-          </Setting>
           <Setting title={t("settings.quit")} desc={t("settings.quitDesc")}>
             <Button onClick={() => void api.quitApp()}>{t("settings.quit")}</Button>
           </Setting>

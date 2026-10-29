@@ -9,6 +9,7 @@ pub mod platform;
 pub mod power;
 pub mod restore;
 pub mod settings;
+pub mod startup;
 pub mod system;
 pub mod tweaks;
 

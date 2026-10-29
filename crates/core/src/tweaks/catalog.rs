@@ -164,7 +164,8 @@ fn build() -> Vec<Tweak> {
         restart: R::None,
         min_build: 0,
         recommended: NONE,
-        reversible: true,
+        // Uninstalling a browser cannot be replayed backwards; the UI asks for an explicit acknowledgement instead.
+        reversible: false,
         default_applied: false,
         actions: vec![
             // Stops Edge Update from putting the browser back; WebView2 has its own id and is untouched.
@@ -473,6 +474,35 @@ fn build() -> Vec<Tweak> {
             NONE,
             vec![Action::HighPerformancePlan],
         ),
+        t(
+            "svchost_split",
+            Performance,
+            Moderate,
+            R::Reboot,
+            &[Legacy],
+            vec![dword(
+                Hklm,
+                r"SYSTEM\CurrentControlSet\Control",
+                "SvcHostSplitThresholdInKB",
+                // Windows splits services into separate processes above 3.5 GB of RAM; this threshold (64 GB, in KB) keeps them grouped.
+                0x0400_0000,
+                None,
+            )],
+        ),
+        t(
+            "power_throttling",
+            Performance,
+            Moderate,
+            R::Reboot,
+            NONE,
+            vec![dword(
+                Hklm,
+                r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
+                "PowerThrottlingOff",
+                1,
+                None,
+            )],
+        ),
         // ---- Gaming
         // Windows ships with Game Mode on, so a PC that never touched the values counts as "on".
         Tweak {
@@ -602,6 +632,59 @@ fn build() -> Vec<Tweak> {
                     "Flags",
                     "58",
                     Some("62"),
+                ),
+            ],
+        ),
+        t(
+            "multimedia_scheduler",
+            Gaming,
+            Safe,
+            R::None,
+            ALL,
+            vec![dword(
+                Hklm,
+                r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
+                "SystemResponsiveness",
+                // Share of CPU kept for background multimedia work: 20 by default, 10 is the lowest Windows honours.
+                10,
+                Some(20),
+            )],
+        ),
+        t(
+            "foreground_priority",
+            Gaming,
+            Safe,
+            R::None,
+            &[Legacy],
+            vec![dword(
+                Hklm,
+                r"SYSTEM\CurrentControlSet\Control\PriorityControl",
+                "Win32PrioritySeparation",
+                // 0x26: short time slices, variable length, the highest foreground boost. Windows default is 2.
+                0x26,
+                Some(2),
+            )],
+        ),
+        t(
+            "vbs_off",
+            Gaming,
+            Advanced,
+            R::Reboot,
+            NONE,
+            vec![
+                dword(
+                    Hklm,
+                    r"SYSTEM\CurrentControlSet\Control\DeviceGuard",
+                    "EnableVirtualizationBasedSecurity",
+                    0,
+                    None,
+                ),
+                dword(
+                    Hklm,
+                    r"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
+                    "Enabled",
+                    0,
+                    None,
                 ),
             ],
         ),

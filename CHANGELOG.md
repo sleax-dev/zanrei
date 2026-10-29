@@ -2,6 +2,31 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [0.4.0] - 2026-10-29
+
+### Added
+- First-run opening: the logo is drawn in with a light sweep before the setup starts (skippable, reduced-motion aware), and the setup shows named steps.
+- Startup programs page: Run keys and Startup folders, switched on and off through the same flag Task Manager uses, journaled so it can be undone.
+- Disk cleanup on the Cleanup page: measures first, deletes only the ticked items (temp files, crash dumps, update leftovers, delivery cache, browser caches, Recycle Bin). Replaces the old one-button temp cleaner.
+- Live numbers on the Overview (processor, memory, processes, startup programs).
+- Restore points can be deleted from the Restore page (one or all), including the matching Windows restore point.
+- New optimizations: group Windows services into fewer processes (low-RAM PCs), turn off power throttling, give games priority over background media, favour the foreground program, turn off memory integrity (VBS, advanced).
+- Game detection: Battle.net, Riot Games, Rockstar, Bethesda and Activision games; GOG primary executable from the game's own file; Xbox executable and name from `MicrosoftGame.config`; Steam installs that are still downloading, Epic add-ons and Unreal Engine are skipped; both Steam library lists are read.
+- Game Boost recognises a game by the folder its process runs from (and ignores crash handlers and launchers), shows the game's name, and recreates the High performance plan on laptops that hide it.
+
+### Changed
+- New logo and palette: brushed silver on black, taken from the logo. New app and tray icons.
+- The window has a fixed size (fitted to small screens), a minimize button for the taskbar and a close button. Close keeps Zanrei in the tray when background mode is on and setup is done; otherwise it exits.
+- Loading states are skeletons instead of spinners.
+- The game list's expand arrow sits at the far end of the row.
+- Removing Edge can no longer be switched off: it is irreversible like removing apps, needs an explicit acknowledgement, and is never offered automatically. Irreversible items never appear in the restore list.
+- The restore-point strip is gone from the sidebar; the Restore page is under Tools.
+
+### Fixed
+- After undoing or deleting the current session's restore point, the next change failed until the app was restarted.
+
 ## [0.3.0] - Unreleased
 
 ### Added

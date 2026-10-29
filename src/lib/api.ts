@@ -63,8 +63,35 @@ export interface Snapshot {
   label: string;
   entries: unknown[];
   rolled_back: boolean;
-  /** What was changed: tweak ids, or "game:<option>:<exe>". */
+  /** What was changed: tweak ids, "game:<option>:<exe>" or "startup:<source>:<name>". */
   notes: string[];
+  restore_point: number | null;
+}
+
+export interface StartupItem {
+  id: string;
+  name: string;
+  command: string;
+  scope: "User" | "AllUsers";
+  enabled: boolean;
+  system: boolean;
+}
+
+export interface CleanupItem {
+  id: string;
+  bytes: number;
+}
+
+export interface LiveStats {
+  cpu_percent: number;
+  ram_used: number;
+  ram_total: number;
+  processes: number;
+}
+
+export interface DeleteReport {
+  deleted: number;
+  windows_points_kept: number;
 }
 
 export interface TweakInfo {
@@ -132,23 +159,30 @@ export const api = {
   listSnapshots: () => invoke<Snapshot[]>("list_snapshots"),
   createSnapshot: (label: string) => invoke<Snapshot>("create_snapshot", { label }),
   rollbackSnapshot: (id: string) => invoke<void>("rollback_snapshot", { id }),
+  deleteSnapshots: (ids: string[]) => invoke<DeleteReport>("delete_snapshots", { ids }),
   openSystemRestore: () => invoke<void>("open_system_restore"),
   getSettings: () => invoke<Settings>("get_settings"),
   savePreferences: (prefs: Prefs) => invoke<void>("save_preferences", { prefs }),
   micaEnabled: () => invoke<boolean>("mica_enabled"),
-  sendToBackground: () => invoke<void>("send_to_background"),
+  minimizeWindow: () => invoke<void>("minimize_window"),
+  closeWindow: () => invoke<void>("close_window"),
   quitApp: () => invoke<void>("quit_app"),
   getAutostart: () => invoke<boolean>("get_autostart"),
   setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
   listTweaks: () => invoke<TweakInfo[]>("list_tweaks"),
-  setTweak: (id: string, enabled: boolean) => invoke<TweakInfo>("set_tweak", { id, enabled }),
+  /** `acknowledged` is only for changes that cannot be undone, and only from their confirmation dialog. */
+  setTweak: (id: string, enabled: boolean, acknowledged = false) => invoke<TweakInfo>("set_tweak", { id, enabled, acknowledged }),
   applyRecommended: (includeModerate: boolean) => invoke<ApplyReport>("apply_recommended", { includeModerate }),
   pendingRestart: () => invoke<Restart>("pending_restart"),
   restartNow: (seconds: number) => invoke<void>("restart_now", { seconds }),
   cancelRestart: () => invoke<void>("cancel_restart"),
   restartExplorer: () => invoke<void>("restart_explorer"),
   signOut: () => invoke<void>("sign_out"),
-  cleanTemp: () => invoke<number>("clean_temp"),
+  scanCleanup: () => invoke<CleanupItem[]>("scan_cleanup"),
+  runCleanup: (ids: string[]) => invoke<number>("run_cleanup", { ids }),
+  listStartup: () => invoke<StartupItem[]>("list_startup"),
+  setStartup: (id: string, enabled: boolean) => invoke<StartupItem[]>("set_startup", { id, enabled }),
+  liveStats: () => invoke<LiveStats>("live_stats"),
   listGames: () => invoke<GameInfo[]>("list_games"),
   setGameOption: (exe: string, option: GameOption, enabled: boolean) =>
     invoke<GameOptions>("set_game_option", { exe, option, enabled }),

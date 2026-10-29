@@ -186,6 +186,7 @@ pub fn apply(store: &Store, p: &dyn Platform, sid: &str, t: &Tweak, build: u32) 
             Action::HighPerformancePlan => {
                 let previous = power::active_scheme(p)?;
                 if previous != power::HIGH_PERFORMANCE {
+                    power::ensure_high_performance(p)?;
                     store.cmd(
                         p,
                         sid,
@@ -194,7 +195,7 @@ pub fn apply(store: &Store, p: &dyn Platform, sid: &str, t: &Tweak, build: u32) 
                     )?;
                 }
             }
-            // Not journaled: an uninstall cannot be replayed backwards. The restore point covers it.
+            // Not journaled: an uninstall cannot be replayed backwards, and neither can a restore point be relied on.
             Action::RemoveEdge => {
                 if p.edge_installed() {
                     p.remove_edge()?;
@@ -209,9 +210,7 @@ pub fn apply(store: &Store, p: &dyn Platform, sid: &str, t: &Tweak, build: u32) 
 /// Puts the stock Windows values back.
 pub fn revert(p: &dyn Platform, t: &Tweak) -> Result<()> {
     if !t.reversible {
-        return Err(Error::Msg(
-            "this change cannot be undone from here; use the restore point".into(),
-        ));
+        return Err(Error::Msg("this change cannot be undone".into()));
     }
     // Reverse order: the policy that blocks a reinstall has to go before the reinstall runs.
     for a in t.actions.iter().rev() {
@@ -237,12 +236,8 @@ pub fn revert(p: &dyn Platform, t: &Tweak) -> Result<()> {
                 p.run("powercfg", &["/h", "on"])?;
             }
             Action::HighPerformancePlan => power::set_scheme(p, power::BALANCED)?,
-            Action::RemoveEdge => {
-                if !p.edge_installed() {
-                    p.reinstall_edge()?;
-                }
-            }
-            Action::RemoveBloatApps => {}
+            // Removing programs cannot be undone; `reversible: false` keeps `revert` from ever getting here.
+            Action::RemoveEdge | Action::RemoveBloatApps => {}
         }
     }
     Ok(())
@@ -380,14 +375,15 @@ mod tests {
     }
 
     #[test]
-    fn edge_removal_reverts_by_reinstalling_and_bloat_is_irreversible() {
+    fn removing_programs_cannot_be_reverted() {
         let (_d, store, p, sid) = setup();
         *p.edge.lock().unwrap() = true;
-        let t = tweak(vec![Action::RemoveEdge]);
-        apply(&store, &p, &sid, &t, 0).unwrap();
-        assert_eq!(state(&p, &t, 0), State::Applied);
-        revert(&p, &t).unwrap();
-        assert!(p.edge_installed());
+        let mut e = tweak(vec![Action::RemoveEdge]);
+        e.reversible = false;
+        apply(&store, &p, &sid, &e, 0).unwrap();
+        assert_eq!(state(&p, &e, 0), State::Applied);
+        assert!(revert(&p, &e).is_err());
+        assert!(!p.edge_installed());
 
         *p.apps.lock().unwrap() = vec!["Microsoft.BingNews".into()];
         let mut b = tweak(vec![Action::RemoveBloatApps]);
@@ -411,6 +407,17 @@ mod tests {
             // anything advanced must never be suggested automatically
             if t.risk == Risk::Advanced {
                 assert!(t.recommended.is_empty(), "{} is advanced but recommended", t.id);
+            }
+            // what cannot be undone is always advanced and always asks first
+            if !t.reversible {
+                assert!(t.risk == Risk::Advanced, "{} is irreversible but not advanced", t.id);
+            }
+            // removing software is irreversible by nature
+            if t.actions
+                .iter()
+                .any(|a| matches!(a, Action::RemoveEdge | Action::RemoveBloatApps))
+            {
+                assert!(!t.reversible, "{} removes software but claims to be reversible", t.id);
             }
         }
     }

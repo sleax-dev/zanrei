@@ -14,6 +14,11 @@ export default {
     "search": "搜索"
   },
   "setup": {
+    "steps": {
+      "welcome": "欢迎",
+      "recommend": "推荐",
+      "done": "完成"
+    },
     "scan": {
       "working": "正在扫描…"
     },
@@ -43,8 +48,13 @@ export default {
     "restore": "还原",
     "settings": "设置"
   },
+  "splash": {
+    "tagline": "为你调校的 Windows。每项更改都可撤销。"
+  },
   "titlebar": {
-    "background": "转入后台"
+    "minimize": "最小化",
+    "close": "关闭",
+    "closeToTray": "关闭(在后台继续运行)"
   },
   "overview": {
     "title": "你的电脑",

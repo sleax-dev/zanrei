@@ -30,12 +30,12 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
   const flags = flagsFor(tweak, t);
 
   const toggle = (enable: boolean) => {
-    if (enable && tweak.risk !== "Safe") setAsk(true);
+    if (enable && (tweak.risk !== "Safe" || !tweak.reversible)) setAsk(true);
     else void setTweak(tweak.id, enable);
   };
 
   return (
-    <div className="row">
+    <div className={tweak.reversible ? "row" : "row irreversible"}>
       <div className="info">
         <div className="name">{t(`tweaks.${tweak.id}.name`)}</div>
         <div className="desc">{t(`tweaks.${tweak.id}.desc`)}</div>
@@ -51,10 +51,16 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
         {working && <Spinner size="tiny" />}
         <Switch checked={on} disabled={locked} aria-label={t(`tweaks.${tweak.id}.name`)} onChange={(_, d) => toggle(d.checked)} />
       </div>
-      <Confirm open={ask} title={t(`tweaks.${tweak.id}.name`)} confirmLabel={t("optimize.apply")} onClose={() => setAsk(false)} onConfirm={() => void setTweak(tweak.id, true)}>
+      <Confirm
+        open={ask}
+        title={t(`tweaks.${tweak.id}.name`)}
+        confirmLabel={t("optimize.apply")}
+        acknowledge={tweak.reversible ? undefined : t("optimize.acknowledge")}
+        onClose={() => setAsk(false)}
+        onConfirm={() => void setTweak(tweak.id, true, !tweak.reversible)}
+      >
         <p>{t(`tweaks.${tweak.id}.desc`)}</p>
-        <p>{t(`optimize.confirm.${tweak.risk}`)}</p>
-        {!tweak.reversible && <p><b>{t("optimize.confirm.irreversible")}</b></p>}
+        {tweak.reversible ? <p>{t(`optimize.confirm.${tweak.risk}`)}</p> : <p><b>{t("optimize.confirm.irreversible")}</b></p>}
       </Confirm>
     </div>
   );

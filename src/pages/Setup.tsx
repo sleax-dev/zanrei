@@ -1,12 +1,12 @@
 import { Button, Checkbox, MessageBar, MessageBarBody, ProgressBar, Spinner } from "@fluentui/react-components";
-import { CheckmarkCircle20Regular, ShieldCheckmark20Regular, Warning16Regular } from "@fluentui/react-icons";
+import { Checkmark12Regular, CheckmarkCircle20Regular, ShieldCheckmark20Regular, Warning16Regular } from "@fluentui/react-icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguagePicker } from "../components/LanguagePicker";
 import { Logo } from "../components/Logo";
+import { SkeletonRows } from "../components/Skeleton";
 import { PcSummary } from "../components/PcSummary";
-import { TitleBar } from "../components/TitleBar";
 import { isRtl, pickLang } from "../i18n";
 import { useApp } from "../state";
 
@@ -25,31 +25,33 @@ export function Setup() {
   const finish = () => void savePrefs({ language: lang, setup_done: true, mode: applied > 0 ? "Auto" : "Recommended" });
 
   return (
-    <>
-      <TitleBar />
-      <div className="setup">
-        <div className="setup-card">
-          <div className="steps" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={i + 1} aria-label={t("setup.progress", { current: i + 1, total: STEPS.length })}>
-            {STEPS.map((x, n) => <i key={x} className={n <= i ? "on" : ""} />)}
-          </div>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 20 * (isRtl(lang) ? -1 : 1) }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.16 }}
-              className="stack"
-              style={{ gap: 16, flex: 1 }}
-            >
-              {step === "welcome" && <Welcome onNext={() => setStep("recommend")} />}
-              {step === "recommend" && <Recommend onBack={() => setStep("welcome")} onDone={(n) => { setApplied(n); setStep("done"); }} />}
-              {step === "done" && <Done applied={applied} onFinish={finish} />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    </>
+    <motion.div className="setup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
+      <motion.div className="setup-card" initial={{ opacity: 0, y: 14, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}>
+        <ol className="stepper" aria-label={t("setup.progress", { current: i + 1, total: STEPS.length })}>
+          {STEPS.map((x, n) => (
+            <li key={x} className={n < i ? "done" : n === i ? "now" : ""} aria-current={n === i ? "step" : undefined}>
+              <span className="dot">{n < i ? <Checkmark12Regular /> : n + 1}</span>
+              <span className="lbl">{t(`setup.steps.${x}`)}</span>
+            </li>
+          ))}
+        </ol>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 24 * (isRtl(lang) ? -1 : 1) }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 * (isRtl(lang) ? -1 : 1) }}
+            transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+            className="stack"
+            style={{ gap: 16, flex: 1 }}
+          >
+            {step === "welcome" && <Welcome onNext={() => setStep("recommend")} />}
+            {step === "recommend" && <Recommend onBack={() => setStep("welcome")} onDone={(n) => { setApplied(n); setStep("done"); }} />}
+            {step === "done" && <Done applied={applied} onFinish={finish} />}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -57,7 +59,7 @@ function Welcome({ onNext }: { onNext: () => void }) {
   const { t } = useTranslation();
   return (
     <>
-      <Logo size={40} />
+      <Logo width={84} />
       <h2>{t("setup.welcome.title")}</h2>
       <p>{t("setup.welcome.body")}</p>
       <ul className="promises">
@@ -131,7 +133,10 @@ function Recommend({ onBack, onDone }: { onBack: () => void; onDone: (applied: n
     <>
       <h2>{t("setup.recommend.title")}</h2>
       {loading ? (
-        <div className="scan"><ProgressBar /><p className="muted">{t("setup.scan.working")}</p></div>
+        <div className="scan">
+          <p className="muted">{t("setup.scan.working")}</p>
+          <SkeletonRows count={5} status={t("setup.scan.working")} switches={false} />
+        </div>
       ) : (
         <>
           <p>

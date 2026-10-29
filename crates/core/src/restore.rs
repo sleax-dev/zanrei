@@ -36,6 +36,9 @@ pub struct Snapshot {
     /// Human-meaningful names of what was changed (tweak ids, "game:option:exe"); shown on the Restore page.
     #[serde(default)]
     pub notes: Vec<String>,
+    /// Sequence number of the Windows restore point made with this snapshot, so deleting the snapshot can delete it too.
+    #[serde(default)]
+    pub restore_point: Option<u32>,
 }
 
 #[derive(Clone)]
@@ -85,7 +88,7 @@ impl Store {
 
     /// Creates the OS restore point first; if that fails nothing is created and the caller must not proceed.
     pub fn create(&self, platform: &dyn Platform, label: &str) -> Result<Snapshot> {
-        platform.create_restore_point(label)?;
+        let restore_point = platform.create_restore_point(label)?;
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
         let mut millis = now.as_millis();
         while self.path(&format!("{millis:016}")).exists() {
@@ -98,9 +101,48 @@ impl Store {
             entries: vec![],
             rolled_back: false,
             notes: vec![],
+            restore_point,
         };
         self.save(&snap)?;
         Ok(snap)
+    }
+
+    /// Forgets snapshots (what they changed stays as it is; it just can no longer be undone from here) and deletes the
+    /// Windows restore points that came with them. Returns `(deleted, windows_points_kept)`: a Windows point that
+    /// could not be removed (it may already be gone) does not keep its snapshot alive. Unreadable ids are skipped;
+    /// it is an error only when nothing at all could be deleted.
+    pub fn delete(&self, platform: &dyn Platform, ids: &[String]) -> Result<(usize, usize)> {
+        let mut deleted = vec![];
+        let mut first_error = None;
+        for id in ids {
+            match self.get(id) {
+                Ok(snap) => deleted.push((id, snap)),
+                Err(e) => {
+                    first_error.get_or_insert(e);
+                }
+            }
+        }
+        if deleted.is_empty()
+            && let Some(e) = first_error
+        {
+            return Err(e);
+        }
+        let points: Vec<u32> = deleted.iter().filter_map(|(_, s)| s.restore_point).collect();
+        let kept = if points.is_empty() {
+            0
+        } else {
+            // A failed attempt counts every point as kept: the files are still deleted below.
+            platform
+                .remove_restore_points(&points)
+                .map_or(points.len(), |left| left.len())
+        };
+        let mut count = 0;
+        for (id, _) in &deleted {
+            if std::fs::remove_file(self.path(id)).is_ok() {
+                count += 1;
+            }
+        }
+        Ok((count, kept))
     }
 
     fn open(&self, id: &str) -> Result<Snapshot> {
@@ -224,6 +266,7 @@ pub(crate) mod tests {
     use crate::platform::{Gpu, Hive};
     use std::collections::HashMap;
     use std::sync::Mutex;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     /// In-memory stand-in for the OS, shared by the tests of every module.
     #[derive(Default)]
@@ -234,6 +277,8 @@ pub(crate) mod tests {
         pub fail_restore_point: bool,
         pub edge: Mutex<bool>,
         pub apps: Mutex<Vec<String>>,
+        pub next_point: AtomicU32,
+        pub removed_points: Mutex<Vec<u32>>,
     }
 
     pub fn k(key: &RegKey) -> String {
@@ -258,12 +303,28 @@ pub(crate) mod tests {
         fn reg_subkeys(&self, _: Hive, _: &str) -> Result<Vec<String>> {
             Ok(vec![])
         }
-        fn create_restore_point(&self, _: &str) -> Result<()> {
+        fn reg_value_names(&self, hive: Hive, path: &str) -> Result<Vec<String>> {
+            let prefix = format!("{hive:?}\\{path}\\");
+            Ok(self
+                .reg
+                .lock()
+                .unwrap()
+                .keys()
+                .filter_map(|k| k.strip_prefix(&prefix))
+                .filter(|rest| !rest.contains('\\'))
+                .map(str::to_string)
+                .collect())
+        }
+        fn create_restore_point(&self, _: &str) -> Result<Option<u32>> {
             if self.fail_restore_point {
                 Err(Error::Msg("disabled by policy".into()))
             } else {
-                Ok(())
+                Ok(Some(self.next_point.fetch_add(1, Ordering::Relaxed)))
             }
+        }
+        fn remove_restore_points(&self, sequences: &[u32]) -> Result<Vec<u32>> {
+            self.removed_points.lock().unwrap().extend_from_slice(sequences);
+            Ok(vec![])
         }
         fn open_system_restore(&self) -> Result<()> {
             Ok(())
@@ -292,10 +353,6 @@ pub(crate) mod tests {
             *self.edge.lock().unwrap() = false;
             Ok(())
         }
-        fn reinstall_edge(&self) -> Result<()> {
-            *self.edge.lock().unwrap() = true;
-            Ok(())
-        }
         fn installed_apps(&self, names: &[&str]) -> Result<Vec<String>> {
             Ok(self
                 .apps
@@ -308,6 +365,12 @@ pub(crate) mod tests {
         }
         fn remove_apps(&self, names: &[&str]) -> Result<()> {
             self.apps.lock().unwrap().retain(|a| !names.contains(&a.as_str()));
+            Ok(())
+        }
+        fn recycle_bin_size(&self) -> Result<u64> {
+            Ok(0)
+        }
+        fn empty_recycle_bin(&self) -> Result<()> {
             Ok(())
         }
     }
@@ -386,6 +449,30 @@ pub(crate) mod tests {
             },
         );
         assert!(store.create(&p, "test").is_err());
+        assert!(store.list().is_empty());
+    }
+
+    #[test]
+    fn deleting_snapshots_removes_their_windows_restore_points_too() {
+        let dir = tempfile::tempdir().unwrap();
+        let (store, p) = (Store::new(dir.path().into()), Fake::default());
+        let (a, b) = (store.create(&p, "a").unwrap(), store.create(&p, "b").unwrap());
+        assert_eq!(store.list().len(), 2);
+        assert_eq!(store.delete(&p, std::slice::from_ref(&a.id)).unwrap(), (1, 0));
+        assert_eq!(store.list().len(), 1);
+        assert_eq!(*p.removed_points.lock().unwrap(), vec![a.restore_point.unwrap()]);
+        assert!(store.get(&b.id).is_ok());
+        // a gone id is an error on its own, but not when other snapshots were deleted with it
+        assert!(store.delete(&p, std::slice::from_ref(&a.id)).is_err());
+        // a snapshot from before restore points were numbered has nothing to remove
+        let old = r#"{"id":"1","created_unix":1,"label":"x","entries":[],"rolled_back":false}"#;
+        std::fs::write(dir.path().join("snapshots/0000000000000001.json"), old).unwrap();
+        assert_eq!(
+            store
+                .delete(&p, &["0000000000000001".into(), b.id.clone(), a.id.clone()])
+                .unwrap(),
+            (2, 0)
+        );
         assert!(store.list().is_empty());
     }
 

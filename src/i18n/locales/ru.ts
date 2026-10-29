@@ -14,6 +14,11 @@ export default {
     "search": "Поиск"
   },
   "setup": {
+    "steps": {
+      "welcome": "Привет",
+      "recommend": "Рекомендации",
+      "done": "Готово"
+    },
     "scan": {
       "working": "Сканирование…"
     },
@@ -43,8 +48,13 @@ export default {
     "restore": "Восстановление",
     "settings": "Настройки"
   },
+  "splash": {
+    "tagline": "Windows, настроенная под вас. Любое изменение можно отменить."
+  },
   "titlebar": {
-    "background": "Свернуть в фон"
+    "minimize": "Свернуть",
+    "close": "Закрыть",
+    "closeToTray": "Закрыть (продолжит работать в фоне)"
   },
   "overview": {
     "title": "Ваш ПК",

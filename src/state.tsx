@@ -25,14 +25,15 @@ interface AppCtx {
   busy: ReadonlySet<string>;
   reloadTweaks: () => Promise<void>;
   /** `null` on success, the error text otherwise (the error is also toasted). */
-  setTweak: (id: string, enabled: boolean) => Promise<string | null>;
+  setTweak: (id: string, enabled: boolean, acknowledged?: boolean) => Promise<string | null>;
   applyRecommended: (includeModerate: boolean) => Promise<void>;
   applying: boolean;
   pending: Restart;
   /** Which switches caused the pending restart, so the bar can say why. */
   restartCauses: string[];
   refreshPending: () => Promise<void>;
-  snapshots: Snapshot[];
+  /** `null` until the first read finishes. */
+  snapshots: Snapshot[] | null;
   reloadSnapshots: () => Promise<void>;
   boost: BoostStatus;
   update: UpdateStatus | null;
@@ -67,7 +68,7 @@ export function AppProvider({ initial, children }: { initial: Settings; children
   const [applying, setApplying] = useState(false);
   const [pending, setPending] = useState<Restart>("None");
   const [restartCauses, setRestartCauses] = useState<string[]>([]);
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null);
   const [boost, setBoost] = useState<BoostStatus>({ active: false, game: null });
   const [update, setUpdate] = useState<UpdateStatus | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -115,10 +116,10 @@ export function AppProvider({ initial, children }: { initial: Settings; children
   const reloadSnapshots = useCallback(async () => setSnapshots(await api.listSnapshots().catch(() => [])), []);
 
   const setTweak = useCallback(
-    async (id: string, enabled: boolean) => {
+    async (id: string, enabled: boolean, acknowledged = false) => {
       setBusy((b) => new Set(b).add(id));
       try {
-        const info = await api.setTweak(id, enabled);
+        const info = await api.setTweak(id, enabled, acknowledged);
         setTweaks((l) => l?.map((x) => (x.id === id ? info : x)) ?? l);
         if (info.restart !== "None") setRestartCauses((c) => (c.includes(id) ? c : [...c, id]));
         await Promise.all([refreshPending(), reloadSnapshots()]);

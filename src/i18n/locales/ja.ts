@@ -14,6 +14,11 @@ export default {
     "search": "検索"
   },
   "setup": {
+    "steps": {
+      "welcome": "ようこそ",
+      "recommend": "おすすめ",
+      "done": "完了"
+    },
     "scan": {
       "working": "スキャン中…"
     },
@@ -43,8 +48,13 @@ export default {
     "restore": "復元",
     "settings": "設定"
   },
+  "splash": {
+    "tagline": "Windowsを最適化。すべての変更は元に戻せます。"
+  },
   "titlebar": {
-    "background": "バックグラウンドに送る"
+    "minimize": "最小化",
+    "close": "閉じる",
+    "closeToTray": "閉じる(バックグラウンドで動作を続けます)"
   },
   "overview": {
     "title": "お使いのPC",

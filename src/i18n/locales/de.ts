@@ -14,6 +14,11 @@ export default {
     "search": "Suchen"
   },
   "setup": {
+    "steps": {
+      "welcome": "Willkommen",
+      "recommend": "Empfehlung",
+      "done": "Fertig"
+    },
     "scan": {
       "working": "Wird gescannt…"
     },
@@ -43,8 +48,13 @@ export default {
     "restore": "Wiederherstellen",
     "settings": "Einstellungen"
   },
+  "splash": {
+    "tagline": "Windows, optimiert. Jede Änderung lässt sich rückgängig machen."
+  },
   "titlebar": {
-    "background": "In den Hintergrund"
+    "minimize": "Minimieren",
+    "close": "Schließen",
+    "closeToTray": "Schließen (läuft im Hintergrund weiter)"
   },
   "overview": {
     "title": "Dein PC",

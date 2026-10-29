@@ -184,21 +184,46 @@ impl Platform for Windows {
         Ok(sub.enum_keys().flatten().collect())
     }
 
-    fn create_restore_point(&self, label: &str) -> Result<()> {
+    fn reg_value_names(&self, h: Hive, path: &str) -> Result<Vec<String>> {
+        let Ok(sub) = hive(h).open_subkey_with_flags(path, KEY_READ | VIEW) else {
+            return Ok(vec![]);
+        };
+        Ok(sub.enum_values().flatten().map(|(name, _)| name).collect())
+    }
+
+    fn create_restore_point(&self, label: &str) -> Result<Option<u32>> {
         // Windows silently skips a restore point if one was made in the last 24 h; lift that throttle
-        // for this one call and put the previous value back afterwards.
-        powershell(
+        // for this one call and put the previous value back afterwards. The newest point's number is
+        // returned so the point can be deleted again later.
+        let out = powershell(
             r#"$ErrorActionPreference='Stop'
 $k='HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore'
 $n='SystemRestorePointCreationFrequency'
 $old=(Get-ItemProperty $k -Name $n -ErrorAction SilentlyContinue).$n
 Enable-ComputerRestore -Drive "$env:SystemDrive\"
 Set-ItemProperty $k $n 0 -Type DWord
-try { Checkpoint-Computer -Description $env:ZANREI_LABEL -RestorePointType MODIFY_SETTINGS }
+try {
+  Checkpoint-Computer -Description $env:ZANREI_LABEL -RestorePointType MODIFY_SETTINGS
+  # Only used to delete the point again later: never let a failed lookup fail the point that was just made.
+  try { (Get-ComputerRestorePoint | Sort-Object SequenceNumber -Descending | Select-Object -First 1).SequenceNumber } catch { }
+}
 finally { if ($null -eq $old) { Remove-ItemProperty $k $n -ErrorAction SilentlyContinue } else { Set-ItemProperty $k $n $old -Type DWord } }"#,
             &[("ZANREI_LABEL", label)],
-        )
-        .map(|_| ())
+        )?;
+        Ok(out.lines().last().and_then(|l| l.trim().parse().ok()))
+    }
+
+    fn remove_restore_points(&self, sequences: &[u32]) -> Result<Vec<u32>> {
+        // There is no cmdlet for this; srclient.dll exports the documented SRRemoveRestorePoint. Whatever it
+        // refuses is printed back.
+        let list = sequences.iter().map(u32::to_string).collect::<Vec<_>>().join(",");
+        let out = powershell(
+            r#"$ErrorActionPreference='Stop'
+Add-Type -Namespace Zanrei -Name Sr -MemberDefinition '[DllImport("srclient.dll")] public static extern int SRRemoveRestorePoint(int index);'
+foreach ($n in ($env:ZANREI_RP -split ',')) { if ([Zanrei.Sr]::SRRemoveRestorePoint([int]$n) -ne 0) { $n } }"#,
+            &[("ZANREI_RP", &list)],
+        )?;
+        Ok(out.lines().filter_map(|l| l.trim().parse().ok()).collect())
     }
 
     fn open_system_restore(&self) -> Result<()> {
@@ -284,22 +309,6 @@ finally { if ($null -eq $old) { Remove-ItemProperty $k $n -ErrorAction SilentlyC
         Ok(())
     }
 
-    fn reinstall_edge(&self) -> Result<()> {
-        self.run(
-            "winget",
-            &[
-                "install",
-                "--id",
-                "Microsoft.Edge",
-                "-e",
-                "--silent",
-                "--accept-package-agreements",
-                "--accept-source-agreements",
-            ],
-        )
-        .map(|_| ())
-    }
-
     fn installed_apps(&self, names: &[&str]) -> Result<Vec<String>> {
         let out = powershell(
             "$n = $env:ZANREI_APPS -split ';'; \
@@ -323,5 +332,17 @@ foreach ($n in ($env:ZANREI_APPS -split ';')) {
             &[("ZANREI_APPS", &names.join(";"))],
         )
         .map(|_| ())
+    }
+
+    fn recycle_bin_size(&self) -> Result<u64> {
+        let out = powershell(
+            "$s = 0; (New-Object -ComObject Shell.Application).NameSpace(10).Items() | ForEach-Object { $s += $_.Size }; [int64]$s",
+            &[],
+        )?;
+        Ok(out.lines().last().and_then(|l| l.trim().parse().ok()).unwrap_or(0))
+    }
+
+    fn empty_recycle_bin(&self) -> Result<()> {
+        powershell("Clear-RecycleBin -Force -ErrorAction SilentlyContinue", &[]).map(|_| ())
     }
 }

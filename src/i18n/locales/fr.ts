@@ -14,6 +14,11 @@ export default {
     "search": "Rechercher"
   },
   "setup": {
+    "steps": {
+      "welcome": "Bienvenue",
+      "recommend": "Recommandé",
+      "done": "Terminé"
+    },
     "scan": {
       "working": "Analyse en cours…"
     },
@@ -43,8 +48,13 @@ export default {
     "restore": "Restaurer",
     "settings": "Paramètres"
   },
+  "splash": {
+    "tagline": "Windows, optimisé. Chaque changement est réversible."
+  },
   "titlebar": {
-    "background": "Envoyer en arrière-plan"
+    "minimize": "Réduire",
+    "close": "Fermer",
+    "closeToTray": "Fermer (reste actif en arrière-plan)"
   },
   "overview": {
     "title": "Ton PC",

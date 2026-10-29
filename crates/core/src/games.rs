@@ -1,5 +1,7 @@
-//! Finds installed games and applies per-game Windows settings. Everything here is read-only discovery
-//! plus registry values written through the snapshot journal.
+//! Finds installed games and applies per-game Windows settings. Discovery is read-only: it reads each launcher's own
+//! records (Steam manifests, Epic manifests, GOG and Xbox game files, launcher registry keys) rather than guessing from
+//! folder names, and tells running games apart by where their process lives, not just by file name. Settings are
+//! registry values written through the snapshot journal.
 
 use crate::Result;
 use crate::kv::{flags_add, flags_has, flags_remove, kv_get, kv_remove, kv_set};
@@ -34,7 +36,9 @@ struct Found {
     exe: Option<PathBuf>,
 }
 
-const SKIP_WORDS: &[&str] = &[
+/// File or folder names (lower-case, substring) that are never the game itself: installers, redistributables, crash
+/// reporters, anti-cheat and launcher helpers.
+const HELPER_WORDS: &[&str] = &[
     "unins",
     "setup",
     "install",
@@ -51,10 +55,23 @@ const SKIP_WORDS: &[&str] = &[
     "updater",
     "launcher_helper",
     "cefprocess",
+    "cefsub",
+    "subprocess",
     "webhelper",
+    "helper",
     "notification",
     "eac_",
 ];
+
+/// Folders that hold engines, tools and runtimes, never the game's own executable.
+const SKIP_DIRS: &[&str] = &["engine", "tools", "support", "mono", "managed", "directx"];
+
+/// Executables smaller than this are launcher stubs and shims, not games.
+const MIN_EXE_BYTES: u64 = 200 * 1024;
+
+fn is_helper(lower_name: &str) -> bool {
+    HELPER_WORDS.iter().any(|w| lower_name.contains(w))
+}
 
 /// Largest plausible game executables under `dir` (installers, redistributables and crash reporters skipped).
 pub fn find_exes(dir: &Path, max: usize) -> Vec<PathBuf> {
@@ -64,10 +81,10 @@ pub fn find_exes(dir: &Path, max: usize) -> Vec<PathBuf> {
             let Ok(meta) = e.metadata() else { continue };
             let name = e.file_name().to_string_lossy().to_ascii_lowercase();
             if meta.is_dir() {
-                if depth < 3 && !SKIP_WORDS.iter().any(|w| name.contains(w)) && !name.starts_with('_') {
+                if depth < 3 && !is_helper(&name) && !SKIP_DIRS.contains(&name.as_str()) && !name.starts_with('_') {
                     walk(&path, depth + 1, out);
                 }
-            } else if name.ends_with(".exe") && !SKIP_WORDS.iter().any(|w| name.contains(w)) {
+            } else if name.ends_with(".exe") && !is_helper(&name) && meta.len() >= MIN_EXE_BYTES {
                 out.push((meta.len(), path));
             }
         }
@@ -88,6 +105,20 @@ fn vdf_values(text: &str, key: &str) -> Vec<String> {
         .collect()
 }
 
+/// `<Tag ... Attr="value" ...>`: the first such attribute. Enough for the small config files launchers write.
+fn xml_attr(text: &str, tag: &str, attr: &str) -> Option<String> {
+    let start = text.find(&format!("<{tag}"))?;
+    let element = &text[start..start + text[start..].find('>')?];
+    let rest = &element[element.find(&format!("{attr}=\""))? + attr.len() + 2..];
+    Some(rest[..rest.find('"')?].to_string())
+}
+
+fn program_data() -> PathBuf {
+    std::env::var_os("ProgramData")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| "C:\\ProgramData".into())
+}
+
 fn steam(p: &dyn Platform) -> Vec<Found> {
     let root = [
         (Hive::Hklm, r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath"),
@@ -101,9 +132,12 @@ fn steam(p: &dyn Platform) -> Vec<Found> {
     });
     let Some(root) = root else { return vec![] };
 
+    // Newer clients keep the list in config/, older ones in steamapps/; read both.
     let mut libs = vec![root.clone()];
-    if let Ok(text) = std::fs::read_to_string(root.join("steamapps/libraryfolders.vdf")) {
-        libs.extend(vdf_values(&text, "path").into_iter().map(PathBuf::from));
+    for file in ["config/libraryfolders.vdf", "steamapps/libraryfolders.vdf"] {
+        if let Ok(text) = std::fs::read_to_string(root.join(file)) {
+            libs.extend(vdf_values(&text, "path").into_iter().map(PathBuf::from));
+        }
     }
     let mut seen = HashSet::new();
     let mut out = vec![];
@@ -120,6 +154,11 @@ fn steam(p: &dyn Platform) -> Vec<Found> {
             let Ok(text) = std::fs::read_to_string(e.path()) else {
                 continue;
             };
+            // StateFlags bit 4 = fully installed; a download in progress or an update half-way does not count yet.
+            let installed = vdf_values(&text, "StateFlags")
+                .first()
+                .and_then(|f| f.parse::<u32>().ok())
+                .is_none_or(|f| f & 4 != 0);
             let (name, dir) = (vdf_values(&text, "name"), vdf_values(&text, "installdir"));
             let (Some(name), Some(dir)) = (name.first(), dir.first()) else {
                 continue;
@@ -133,8 +172,9 @@ fn steam(p: &dyn Platform) -> Vec<Found> {
                 "proton",
                 "dedicated server",
                 "sdk",
+                "soundtrack",
             ];
-            if dir.is_dir() && !tool.iter().any(|w| lower.contains(w)) {
+            if installed && dir.is_dir() && !tool.iter().any(|w| lower.contains(w)) {
                 out.push(Found {
                     name: name.clone(),
                     launcher: "Steam",
@@ -153,18 +193,25 @@ struct EpicItem {
     display_name: Option<String>,
     install_location: Option<String>,
     launch_executable: Option<String>,
+    app_name: Option<String>,
+    main_game_app_name: Option<String>,
+    #[serde(rename = "bIsIncompleteInstall")]
+    incomplete: Option<bool>,
 }
 
 fn epic() -> Vec<Found> {
-    let base = std::env::var_os("ProgramData")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| "C:\\ProgramData".into());
-    std::fs::read_dir(base.join(r"Epic\EpicGamesLauncher\Data\Manifests"))
+    std::fs::read_dir(program_data().join(r"Epic\EpicGamesLauncher\Data\Manifests"))
         .into_iter()
         .flatten()
         .flatten()
         .filter(|e| e.path().extension().is_some_and(|x| x == "item"))
         .filter_map(|e| serde_json::from_slice::<EpicItem>(&std::fs::read(e.path()).ok()?).ok())
+        // Skip half-finished installs, add-ons (their app name differs from the base game's) and Unreal Engine itself.
+        .filter(|i| !i.incomplete.unwrap_or(false))
+        .filter(|i| match (&i.app_name, &i.main_game_app_name) {
+            (Some(app), Some(main)) => app == main && !app.starts_with("UE_"),
+            _ => true,
+        })
         .filter_map(|i| {
             let (dir, exe) = (
                 PathBuf::from(i.install_location?),
@@ -187,6 +234,26 @@ fn reg_string(p: &dyn Platform, h: Hive, path: &str, name: &str) -> Option<Strin
     }
 }
 
+/// The executable GOG marks as the primary play task in the game's own `goggame-<id>.info`.
+fn gog_primary(dir: &Path) -> Option<PathBuf> {
+    std::fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .filter(|e| {
+            let n = e.file_name().to_string_lossy().to_ascii_lowercase();
+            n.starts_with("goggame-") && n.ends_with(".info")
+        })
+        .find_map(|e| {
+            let info: serde_json::Value = serde_json::from_slice(&std::fs::read(e.path()).ok()?).ok()?;
+            info["playTasks"]
+                .as_array()?
+                .iter()
+                .find(|t| t["isPrimary"].as_bool() == Some(true))
+                .and_then(|t| t["path"].as_str())
+                .map(|rel| dir.join(rel.replace('/', "\\")))
+        })
+}
+
 /// Registry-based launchers. 32-bit-on-64-bit Windows and 32-bit Windows keep these in different places.
 fn registry_launchers(p: &dyn Platform) -> Vec<Found> {
     let mut out = vec![];
@@ -198,11 +265,12 @@ fn registry_launchers(p: &dyn Platform) -> Vec<Found> {
                 reg_string(p, Hive::Hklm, &path, "gameName"),
                 reg_string(p, Hive::Hklm, &path, "path"),
             ) {
-                let exe = reg_string(p, Hive::Hklm, &path, "exe").map(PathBuf::from);
+                let dir = PathBuf::from(dir);
+                let exe = gog_primary(&dir).or_else(|| reg_string(p, Hive::Hklm, &path, "exe").map(PathBuf::from));
                 out.push(Found {
                     name,
                     launcher: "GOG",
-                    dir: dir.into(),
+                    dir,
                     exe,
                 });
             }
@@ -235,7 +303,92 @@ fn registry_launchers(p: &dyn Platform) -> Vec<Found> {
     out
 }
 
-/// Microsoft Store / Xbox app games install under `<drive>:\XboxGames\<Game>\Content`.
+/// Publishers whose programs in the Windows uninstall list are games (Battle.net and Rockstar have no manifests of
+/// their own to read), with the launcher label to show. Their launchers and clients are filtered out by name.
+const GAME_PUBLISHERS: &[(&str, &str)] = &[
+    ("blizzard entertainment", "Battle.net"),
+    ("riot games", "Riot Games"),
+    ("rockstar games", "Rockstar Games"),
+    ("bethesda softworks", "Bethesda"),
+    ("activision", "Activision"),
+    ("wargaming", "Wargaming"),
+];
+const NOT_GAMES: &[&str] = &[
+    "battle.net",
+    "launcher",
+    "client",
+    "social club",
+    "bethesda.net",
+    "vanguard",
+    "anti-cheat",
+];
+
+fn uninstall_list(p: &dyn Platform) -> Vec<Found> {
+    let mut out = vec![];
+    for (hive, base) in [
+        (Hive::Hklm, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (
+            Hive::Hklm,
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        ),
+        (Hive::Hkcu, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+    ] {
+        for sub in p.reg_subkeys(hive, base).unwrap_or_default() {
+            let path = format!(r"{base}\{sub}");
+            let Some(publisher) = reg_string(p, hive, &path, "Publisher").map(|s| s.to_ascii_lowercase()) else {
+                continue;
+            };
+            let Some(&(_, launcher)) = GAME_PUBLISHERS.iter().find(|(name, _)| publisher.contains(name)) else {
+                continue;
+            };
+            let (Some(name), Some(dir)) = (
+                reg_string(p, hive, &path, "DisplayName"),
+                reg_string(p, hive, &path, "InstallLocation"),
+            ) else {
+                continue;
+            };
+            let dir = PathBuf::from(dir.trim_end_matches(['\\', '/']));
+            let lower = name.to_ascii_lowercase();
+            if dir.is_dir() && !NOT_GAMES.iter().any(|w| lower.contains(w)) {
+                out.push(Found {
+                    name,
+                    launcher,
+                    dir,
+                    exe: None,
+                });
+            }
+        }
+    }
+    out
+}
+
+/// Riot writes one settings file per product with the full install path.
+fn riot() -> Vec<Found> {
+    std::fs::read_dir(program_data().join(r"Riot Games\Metadata"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .flat_map(|d| std::fs::read_dir(d.path()).into_iter().flatten().flatten())
+        .filter(|f| f.file_name().to_string_lossy().ends_with(".product_settings.yaml"))
+        .filter_map(|f| {
+            let text = std::fs::read_to_string(f.path()).ok()?;
+            let line = text
+                .lines()
+                .find_map(|l| l.trim().strip_prefix("product_install_full_path:"))?;
+            let dir = PathBuf::from(line.trim().trim_matches(['"', '\'']).replace('/', "\\"));
+            let name = dir.file_name()?.to_string_lossy().into_owned();
+            (dir.is_dir() && !name.to_ascii_lowercase().contains("client")).then_some(Found {
+                name,
+                launcher: "Riot Games",
+                dir,
+                exe: None,
+            })
+        })
+        .collect()
+}
+
+/// Microsoft Store / Xbox app games install under `<drive>:\XboxGames\<Game>\Content`; `MicrosoftGame.config`
+/// names the executable.
 fn xbox(roots: &[PathBuf]) -> Vec<Found> {
     roots
         .iter()
@@ -244,11 +397,18 @@ fn xbox(roots: &[PathBuf]) -> Vec<Found> {
         .map(|e| {
             let dir = e.path();
             let content = dir.join("Content");
+            let dir = if content.is_dir() { content } else { dir };
+            let config = std::fs::read_to_string(dir.join("MicrosoftGame.config")).unwrap_or_default();
+            let exe = xml_attr(&config, "Executable", "Name").map(|n| dir.join(n));
+            // The display name is often a resource reference ("ms-resource:..."); the folder name is the fallback.
+            let name = xml_attr(&config, "ShellVisuals", "DefaultDisplayName")
+                .filter(|n| !n.starts_with("ms-resource") && !n.is_empty())
+                .unwrap_or_else(|| e.file_name().to_string_lossy().into_owned());
             Found {
-                name: e.file_name().to_string_lossy().into_owned(),
+                name,
                 launcher: "Xbox",
-                dir: if content.is_dir() { content } else { dir },
-                exe: None,
+                dir,
+                exe,
             }
         })
         .collect()
@@ -258,6 +418,8 @@ pub fn detect(p: &dyn Platform, drive_roots: &[PathBuf], custom: &[CustomGame]) 
     let mut found: Vec<Found> = steam(p);
     found.extend(epic());
     found.extend(registry_launchers(p));
+    found.extend(riot());
+    found.extend(uninstall_list(p));
     found.extend(xbox(drive_roots));
     for c in custom {
         let exe = PathBuf::from(&c.exe);
@@ -275,7 +437,7 @@ pub fn detect(p: &dyn Platform, drive_roots: &[PathBuf], custom: &[CustomGame]) 
         .filter_map(|f| {
             let mut exes: Vec<PathBuf> = f.exe.clone().into_iter().filter(|e| e.is_file()).collect();
             if f.launcher != "Custom" {
-                for e in find_exes(&f.dir, 4) {
+                for e in find_exes(&f.dir, 5) {
                     if !exes.contains(&e) {
                         exes.push(e);
                     }
@@ -296,22 +458,66 @@ pub fn detect(p: &dyn Platform, drive_roots: &[PathBuf], custom: &[CustomGame]) 
     games
 }
 
-/// Lower-cased executable file names of every game, for matching against running processes.
-pub fn exe_names(games: &[Game]) -> HashSet<String> {
-    games
-        .iter()
-        .flat_map(|g| g.exes.iter())
-        .filter_map(|e| {
-            Path::new(e)
-                .file_name()
-                .map(|n| n.to_string_lossy().to_ascii_lowercase())
-        })
-        .collect()
+fn norm(path: &str) -> String {
+    path.to_ascii_lowercase().replace('/', "\\")
 }
 
-/// The first running process that is one of the known game executables (names compared lower-cased).
-pub fn running_game(known: &HashSet<String>, running: impl Iterator<Item = String>) -> Option<String> {
-    running.map(|n| n.to_ascii_lowercase()).find(|n| known.contains(n))
+struct Watched {
+    name: String,
+    /// Lower-cased executable file names.
+    exes: HashSet<String>,
+    /// Lower-cased install folder with a trailing backslash; `None` for games the user added by hand,
+    /// whose folder may be anything (Downloads, a drive root).
+    dir: Option<String>,
+}
+
+/// What Game Boost looks for among the running processes.
+pub struct Watch(Vec<Watched>);
+
+pub fn watch(games: &[Game]) -> Watch {
+    Watch(
+        games
+            .iter()
+            .map(|g| Watched {
+                name: g.name.clone(),
+                exes: g
+                    .exes
+                    .iter()
+                    .map(|e| e.rsplit(['\\', '/']).next().unwrap_or(e).to_ascii_lowercase())
+                    .collect(),
+                dir: (g.launcher != "Custom" && !g.dir.is_empty())
+                    .then(|| format!("{}\\", norm(g.dir.trim_end_matches(['\\', '/'])))),
+            })
+            .collect(),
+    )
+}
+
+impl Watch {
+    /// The name of the first game that has a running process. A process counts when it is one of the game's known
+    /// executables, or when it runs from inside the game's folder (the real executable is often not one of the few
+    /// we picked, and many games start through a differently named binary). Crash handlers, helpers and launchers
+    /// never count on their own.
+    pub fn running(&self, processes: impl Iterator<Item = (String, Option<PathBuf>)>) -> Option<String> {
+        for (name, path) in processes {
+            let lower = name.to_ascii_lowercase();
+            if is_helper(&lower) {
+                continue;
+            }
+            let by_folder = !["launcher", "client", "updater"].iter().any(|w| lower.contains(w));
+            let path = path.map(|p| norm(&p.to_string_lossy()));
+            for w in &self.0 {
+                let in_folder = by_folder
+                    && w.dir
+                        .as_ref()
+                        .zip(path.as_ref())
+                        .is_some_and(|(dir, p)| p.starts_with(dir.as_str()));
+                if w.exes.contains(&lower) || in_folder {
+                    return Some(w.name.clone());
+                }
+            }
+        }
+        None
+    }
 }
 
 // ---- per-game settings
@@ -419,14 +625,81 @@ mod tests {
     use super::*;
     use crate::restore::tests::Fake;
 
+    fn game(name: &str, launcher: &str, dir: &str, exe: &str) -> Game {
+        Game {
+            id: exe.to_ascii_lowercase(),
+            name: name.into(),
+            launcher: launcher.into(),
+            dir: dir.into(),
+            exe: exe.into(),
+            exes: vec![exe.into()],
+        }
+    }
+
+    fn procs(list: &[(&str, Option<&str>)]) -> impl Iterator<Item = (String, Option<PathBuf>)> {
+        list.iter()
+            .map(|(n, p)| (n.to_string(), p.map(PathBuf::from)))
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
     #[test]
-    fn spots_a_running_game() {
-        let known = HashSet::from(["game.exe".to_string()]);
+    fn spots_a_running_game_by_name_or_by_folder() {
+        let w = watch(&[
+            game("Foo", "Steam", r"D:\Steam\common\Foo", r"D:\Steam\common\Foo\Foo.exe"),
+            game(
+                "Bar",
+                "Custom",
+                r"C:\Users\me\Downloads",
+                r"C:\Users\me\Downloads\bar.exe",
+            ),
+        ]);
+        let shell = Some(r"C:\Windows\explorer.exe");
+        assert_eq!(w.running(procs(&[("explorer.exe", shell)])), None);
         assert_eq!(
-            running_game(&known, ["explorer.exe".to_string(), "Game.EXE".to_string()].into_iter()).as_deref(),
-            Some("game.exe")
+            w.running(procs(&[("explorer.exe", shell), ("FOO.EXE", None)]))
+                .as_deref(),
+            Some("Foo")
         );
-        assert_eq!(running_game(&known, ["explorer.exe".to_string()].into_iter()), None);
+        // a differently named binary inside the game's folder still counts (forward slashes and case do not matter)
+        let inside = Some("d:/steam/common/foo/bin/Shipping-Win64.exe");
+        assert_eq!(
+            w.running(procs(&[("Shipping-Win64.exe", inside)])).as_deref(),
+            Some("Foo")
+        );
+        // ... but not a crash handler, a launcher, or a folder that merely starts with the same letters
+        assert_eq!(w.running(procs(&[("CrashHandler.exe", inside)])), None);
+        assert_eq!(w.running(procs(&[("FooLauncher.exe", inside)])), None);
+        assert_eq!(
+            w.running(procs(&[("x.exe", Some(r"D:\Steam\common\Foo2\x.exe"))])),
+            None
+        );
+        // a hand-added game is matched by name only: its folder (Downloads) says nothing about other programs
+        assert_eq!(
+            w.running(procs(&[("other.exe", Some(r"C:\Users\me\Downloads\other.exe"))])),
+            None
+        );
+        assert_eq!(w.running(procs(&[("bar.exe", None)])).as_deref(), Some("Bar"));
+    }
+
+    #[test]
+    fn reads_launcher_files() {
+        let config =
+            r#"<Game><Executable Name="Halo.exe" TargetDevice="PC"/><ShellVisuals DefaultDisplayName="Halo" /></Game>"#;
+        assert_eq!(xml_attr(config, "Executable", "Name").as_deref(), Some("Halo.exe"));
+        assert_eq!(
+            xml_attr(config, "ShellVisuals", "DefaultDisplayName").as_deref(),
+            Some("Halo")
+        );
+        assert_eq!(xml_attr("<A/>", "Executable", "Name"), None);
+
+        let d = tempfile::tempdir().unwrap();
+        std::fs::write(
+            d.path().join("goggame-123.info"),
+            r#"{"playTasks":[{"isPrimary":false,"path":"tool.exe"},{"isPrimary":true,"path":"bin/Game.exe"}]}"#,
+        )
+        .unwrap();
+        assert_eq!(gog_primary(d.path()), Some(d.path().join("bin\\Game.exe")));
     }
 
     #[test]
@@ -442,10 +715,13 @@ mod tests {
     fn finds_the_game_exe_and_skips_helpers() {
         let d = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(d.path().join("bin")).unwrap();
-        std::fs::write(d.path().join("bin/game.exe"), vec![0u8; 5000]).unwrap();
-        std::fs::write(d.path().join("unins000.exe"), vec![0u8; 9000]).unwrap();
-        std::fs::write(d.path().join("UnityCrashHandler64.exe"), vec![0u8; 9000]).unwrap();
-        std::fs::write(d.path().join("readme.txt"), vec![0u8; 9999]).unwrap();
+        std::fs::create_dir_all(d.path().join("Engine/Binaries")).unwrap();
+        std::fs::write(d.path().join("bin/game.exe"), vec![0u8; 300_000]).unwrap();
+        std::fs::write(d.path().join("unins000.exe"), vec![0u8; 900_000]).unwrap();
+        std::fs::write(d.path().join("UnityCrashHandler64.exe"), vec![0u8; 900_000]).unwrap();
+        std::fs::write(d.path().join("Engine/Binaries/ue.exe"), vec![0u8; 900_000]).unwrap(); // engine tooling
+        std::fs::write(d.path().join("stub.exe"), vec![0u8; 5000]).unwrap(); // launcher shim
+        std::fs::write(d.path().join("readme.txt"), vec![0u8; 999_999]).unwrap();
         let exes = find_exes(d.path(), 4);
         assert_eq!(exes.len(), 1);
         assert!(exes[0].ends_with("game.exe"));
@@ -462,7 +738,7 @@ mod tests {
         };
         let games = detect(&Fake::default(), &[], &[c.clone(), c]);
         assert_eq!(games.len(), 1);
-        assert_eq!(exe_names(&games), HashSet::from(["foo.exe".to_string()]));
+        assert_eq!(games[0].launcher, "Custom");
     }
 
     #[test]

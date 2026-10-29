@@ -66,8 +66,14 @@ pub trait Platform: Send + Sync {
     fn reg_set(&self, key: &RegKey, value: &RegValue) -> Result<()>;
     fn reg_delete(&self, key: &RegKey) -> Result<()>;
     fn reg_subkeys(&self, hive: Hive, path: &str) -> Result<Vec<String>>;
-    /// Creates an OS-level restore point. Must fail loudly: restore is mandatory before any change.
-    fn create_restore_point(&self, label: &str) -> Result<()>;
+    /// Names of the values directly under a key (empty when the key does not exist).
+    fn reg_value_names(&self, hive: Hive, path: &str) -> Result<Vec<String>>;
+    /// Creates an OS-level restore point and returns its sequence number when the OS reports one.
+    /// Must fail loudly: restore is mandatory before any change.
+    fn create_restore_point(&self, label: &str) -> Result<Option<u32>>;
+    /// Deletes OS restore points by the sequence numbers `create_restore_point` returned, in one go (starting the
+    /// tooling is slow). Returns the ones that could not be removed, for instance because Windows already dropped them.
+    fn remove_restore_points(&self, sequences: &[u32]) -> Result<Vec<u32>>;
     /// Opens the OS's own restore UI (full-system rollback, needs a reboot).
     fn open_system_restore(&self) -> Result<()>;
     /// Runs a program without a shell or a visible window. Err on a non-zero exit code.
@@ -76,11 +82,14 @@ pub trait Platform: Send + Sync {
     fn task_enabled(&self, path: &str) -> Result<Option<bool>>;
     fn task_set_enabled(&self, path: &str, enabled: bool) -> Result<()>;
     fn edge_installed(&self) -> bool;
+    /// Uninstalls Edge. Nothing here can put it back: callers must say so before they ask.
     fn remove_edge(&self) -> Result<()>;
-    fn reinstall_edge(&self) -> Result<()>;
     /// Which of these packages are installed (any user).
     fn installed_apps(&self, names: &[&str]) -> Result<Vec<String>>;
     fn remove_apps(&self, names: &[&str]) -> Result<()>;
+    /// Bytes held by the Recycle Bin of every drive.
+    fn recycle_bin_size(&self) -> Result<u64>;
+    fn empty_recycle_bin(&self) -> Result<()>;
 }
 
 pub fn current() -> Box<dyn Platform> {

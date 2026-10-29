@@ -1,7 +1,6 @@
-import { ArrowDownload16Regular, History16Regular } from "@fluentui/react-icons";
+import { ArrowDownload16Regular } from "@fluentui/react-icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { fmtShort } from "../lib/format";
 import { ICONS, NAV_GROUPS, type Page, TWEAK_PAGES } from "../nav";
 import { CategoryPage } from "../pages/CategoryPage";
 import { Graphics } from "../pages/Graphics";
@@ -10,6 +9,7 @@ import { Logs } from "../pages/Logs";
 import { Overview } from "../pages/Overview";
 import { Restore } from "../pages/Restore";
 import { SettingsPage } from "../pages/SettingsPage";
+import { Startup } from "../pages/Startup";
 import { useApp } from "../state";
 import { Floating } from "./Floating";
 import { RestartDock } from "./RestartDock";
@@ -34,25 +34,10 @@ function NavButton({ page }: { page: Page }) {
   );
 }
 
-/** Reversibility is the product, so the way back is always on screen. */
-function SafetyStrip() {
-  const { t, i18n } = useTranslation();
-  const { snapshots, setPage } = useApp();
-  const last = snapshots.find((s) => !s.rolled_back && s.entries.length > 0);
-  return (
-    <button className="safety" onClick={() => setPage("restore")}>
-      <History16Regular />
-      <span>
-        <b>{last ? t("safety.last", { when: fmtShort(last.created_unix, i18n.language) }) : t("safety.none")}</b>
-        <small>{last ? t("safety.review", { count: last.entries.length }) : t("safety.noneDesc")}</small>
-      </span>
-    </button>
-  );
-}
-
 function PageView({ page }: { page: Page }) {
   if (page === "overview") return <Overview />;
   if (TWEAK_PAGES[page]) return <CategoryPage page={page} />;
+  if (page === "startup") return <Startup />;
   if (page === "library") return <Library />;
   if (page === "graphics") return <Graphics />;
   if (page === "restore") return <Restore />;
@@ -81,7 +66,6 @@ export function Shell() {
               {t("settings.updateTo", { version: update.available.version })}
             </button>
           )}
-          <SafetyStrip />
           <NavButton page="settings" />
         </nav>
         <main className="content">

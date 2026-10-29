@@ -4,6 +4,7 @@ import { open as pickFile } from "@tauri-apps/plugin-dialog";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SkeletonRows } from "../components/Skeleton";
 import { api, errorText, type GameInfo, type GameOption } from "../lib/api";
 import { useApp } from "../state";
 
@@ -88,8 +89,9 @@ export function Library() {
 
       <section className="stack">
         <div className="sect-head"><h2>{t("games.yourGames")}</h2></div>
-      {games === null && <Spinner label={t("games.scanning")} />}
+      {games === null && <SkeletonRows count={6} status={t("games.scanning")} switches={false} />}
       {games?.length === 0 && <p className="muted">{t("games.empty")}</p>}
+      {games && games.length > 0 && <p className="muted small" style={{ margin: 0 }}>{t("games.found", { count: games.length, launchers: [...new Set(games.map((g) => g.launcher))].join(", ") })}</p>}
       <div className="rows">
         {games?.map((g) => {
           const isOpen = open === g.id;

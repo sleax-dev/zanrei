@@ -17,7 +17,7 @@ const ids = [...catalog.matchAll(/(?:\bt\(\s*|id:\s*)"([a-z_]+)"/g)].map((m) => 
 for (const id of ids) ["name", "desc"].forEach((k) => keys.add(`tweaks.${id}.${k}`));
 
 // keys built at runtime, listed here so they are checked too
-const PAGES = ["overview", "privacy", "performance", "gaming", "windows", "cleanup", "library", "graphics", "restore", "logs", "settings"];
+const PAGES = ["overview", "privacy", "performance", "startup", "gaming", "windows", "cleanup", "library", "graphics", "restore", "logs", "settings"];
 const dynamic = {
   restart: ["Explorer", "SignOut", "Reboot"],
   "optimize.risk": ["Safe", "Moderate", "Advanced"],
@@ -30,6 +30,10 @@ const dynamic = {
   "logs.level": ["all", "Info", "Warn", "Error"],
 };
 for (const [p, list] of Object.entries(dynamic)) list.forEach((k) => keys.add(`${p}.${k}`));
+const DISK = ["temp", "windows_temp", "crash_dumps", "update_cache", "delivery_cache", "browser_cache", "recycle_bin"];
+for (const d of DISK) ["name", "desc"].forEach((k) => keys.add(`disk.item.${d}.${k}`));
+for (const k of ["User", "AllUsers"]) keys.add(`startup.scope.${k}`);
+for (const k of ["welcome", "recommend", "done"]) keys.add(`setup.steps.${k}`);
 for (const o of ["gpu", "fso", "priority"]) ["name", "desc"].forEach((k) => keys.add(`games.opt.${o}.${k}`));
 for (const m of ["manual", "recommended", "auto"]) ["name", "desc"].forEach((k) => keys.add(`setup.mode.${m}.${k}`));
 

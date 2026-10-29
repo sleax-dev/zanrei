@@ -3,14 +3,13 @@ mod logs;
 use logs::{Level, Logger};
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashSet,
     path::PathBuf,
     sync::{Arc, Mutex, MutexGuard, OnceLock},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
-use sysinfo::{Disks, ProcessesToUpdate, System};
+use sysinfo::{Disks, ProcessRefreshKind, ProcessesToUpdate, System};
 use tauri::{
-    AppHandle, Emitter, Manager, RunEvent, State, WindowEvent,
+    AppHandle, Emitter, LogicalSize, Manager, RunEvent, State, WindowEvent,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent},
     window::{Effect, EffectsBuilder},
@@ -23,6 +22,7 @@ use zanrei_core::{
     power,
     restore::{Snapshot, Store},
     settings::{self, Mode, Settings},
+    startup::{self, StartupItem},
     system::{self, SystemInfo},
     tweaks::{self, Restart, Risk, TweakInfo},
 };
@@ -50,6 +50,8 @@ struct Inner {
     pending_restart: Mutex<Restart>,
     system: Mutex<Option<SystemInfo>>,
     games: Mutex<Vec<Game>>,
+    /// Kept between calls: CPU usage is the change since the previous refresh.
+    stats: Mutex<System>,
     boost: Mutex<BoostStatus>,
     tray: Mutex<Option<TrayIcon>>,
     log: Logger,
@@ -131,23 +133,37 @@ impl Inner {
         })
     }
 
-    fn set_tweak(&self, id: &str, enabled: bool) -> CoreResult<TweakInfo> {
+    /// `acknowledged` is the user's explicit "I understand this cannot be undone"; the UI only sends it from the
+    /// confirmation dialog, so nothing irreversible can be switched on by a stray call or by "apply all".
+    fn set_tweak(&self, id: &str, enabled: bool, acknowledged: bool) -> CoreResult<TweakInfo> {
         let t = tweaks::find(id).ok_or_else(|| Error::Msg("unknown tweak".into()))?;
+        if enabled && !t.reversible && !acknowledged {
+            return Err(Error::Msg(
+                "this change cannot be undone and needs explicit confirmation".into(),
+            ));
+        }
         let (build, tier) = (system::os_build(), self.system().tier);
         {
             let _guard = lock(&self.change_lock);
             if enabled {
                 let sid = self.ensure_session()?;
                 tweaks::apply(&self.store, &*self.platform, &sid, t, build)?;
-                let _ = self.store.note(&sid, id);
+                // The restore page lists what can be undone; something that cannot be must not appear there.
+                if t.reversible {
+                    let _ = self.store.note(&sid, id);
+                }
             } else {
                 tweaks::revert(&*self.platform, t)?;
             }
         }
         self.log(
-            Level::Info,
+            if t.reversible { Level::Info } else { Level::Warn },
             "tweaks",
-            format!("{} {id}", if enabled { "Applied" } else { "Reverted" }),
+            format!(
+                "{} {id}{}",
+                if enabled { "Applied" } else { "Reverted" },
+                if t.reversible { "" } else { " (cannot be undone)" }
+            ),
         );
         self.note_restart(t.restart);
         self.update_settings(|s| {
@@ -165,7 +181,7 @@ impl Inner {
         let disabled = lock(&self.settings).user_disabled.clone();
         let mut report = ApplyReport::default();
         for t in tweaks::catalog() {
-            let allowed = t.risk == Risk::Safe || (include_moderate && t.risk == Risk::Moderate);
+            let allowed = t.reversible && (t.risk == Risk::Safe || (include_moderate && t.risk == Risk::Moderate));
             if !allowed || !t.recommended.contains(&tier) || disabled.iter().any(|d| d == t.id) {
                 continue;
             }
@@ -176,7 +192,7 @@ impl Inner {
                 continue;
             }
             // set_tweak records "switched off by hand" only for enabled=false, so this stays clean.
-            match self.set_tweak(t.id, true) {
+            match self.set_tweak(t.id, true, false) {
                 Ok(_) => report.applied.push(t.id.to_string()),
                 Err(e) => {
                     self.log(Level::Error, "tweaks", format!("{}: {e}", t.id));
@@ -313,10 +329,49 @@ async fn rollback_snapshot(s: State<'_, AppState>, id: String) -> Res<()> {
     with(&s, "rollback_snapshot", move |i| {
         let _guard = lock(&i.change_lock);
         i.store.rollback(&*i.platform, &id)?;
+        // A rolled-back snapshot refuses new entries; the next change has to start a fresh one.
+        let mut session = lock(&i.session);
+        if session.as_ref().is_some_and(|(sid, _)| *sid == id) {
+            *session = None;
+        }
+        drop(session);
         i.log(Level::Info, "restore", format!("Rolled back restore point {id}"));
         // Whatever was undone may need the same follow-up as when it was applied.
         i.note_restart(Restart::Reboot);
         Ok(())
+    })
+    .await
+}
+
+#[derive(Serialize)]
+struct DeleteReport {
+    deleted: usize,
+    /// Zanrei's records are gone, but these Windows restore points could not be removed (they may already be gone).
+    windows_points_kept: usize,
+}
+
+/// Deletes restore points: Zanrei's record and the Windows restore point that came with it. What they changed
+/// stays as it is, it just can no longer be undone from here.
+#[tauri::command]
+async fn delete_snapshots(s: State<'_, AppState>, ids: Vec<String>) -> Res<DeleteReport> {
+    with(&s, "delete_snapshots", move |i| {
+        let _guard = lock(&i.change_lock);
+        let (deleted, windows_points_kept) = i.store.delete(&*i.platform, &ids)?;
+        // The running session writes into one snapshot; if that one is gone, the next change must start a new one.
+        let mut session = lock(&i.session);
+        if session.as_ref().is_some_and(|(sid, _)| ids.contains(sid)) {
+            *session = None;
+        }
+        drop(session);
+        i.log(
+            Level::Info,
+            "restore",
+            format!("Deleted {deleted} restore point(s); {windows_points_kept} Windows restore point(s) could not be removed"),
+        );
+        Ok(DeleteReport {
+            deleted,
+            windows_points_kept,
+        })
     })
     .await
 }
@@ -334,8 +389,11 @@ async fn list_tweaks(s: State<'_, AppState>) -> Res<Vec<TweakInfo>> {
 }
 
 #[tauri::command]
-async fn set_tweak(s: State<'_, AppState>, id: String, enabled: bool) -> Res<TweakInfo> {
-    with(&s, "set_tweak", move |i| i.set_tweak(&id, enabled)).await
+async fn set_tweak(s: State<'_, AppState>, id: String, enabled: bool, acknowledged: Option<bool>) -> Res<TweakInfo> {
+    with(&s, "set_tweak", move |i| {
+        i.set_tweak(&id, enabled, acknowledged.unwrap_or(false))
+    })
+    .await
 }
 
 #[tauri::command]
@@ -347,23 +405,79 @@ async fn apply_recommended(s: State<'_, AppState>, include_moderate: bool) -> Re
 }
 
 #[tauri::command]
-async fn clean_temp(s: State<'_, AppState>) -> Res<u64> {
-    with(&s, "clean_temp", |i| {
-        let age = Duration::from_secs(3600);
-        let win_temp = std::env::var_os("SystemRoot").map(|r| PathBuf::from(r).join("Temp"));
-        let freed: u64 = [Some(std::env::temp_dir()), win_temp]
-            .into_iter()
-            .flatten()
-            .map(|d| cleanup::clean_dir(&d, age))
-            .sum();
+async fn scan_cleanup(s: State<'_, AppState>) -> Res<Vec<cleanup::Item>> {
+    with(&s, "scan_cleanup", |i| Ok(cleanup::size(&*i.platform))).await
+}
+
+/// Deletes the chosen items for good. The UI has already shown the sizes and asked.
+#[tauri::command]
+async fn run_cleanup(s: State<'_, AppState>, ids: Vec<String>) -> Res<u64> {
+    with(&s, "run_cleanup", move |i| {
+        let freed = cleanup::clean(&*i.platform, &ids)?;
         i.log(
-            Level::Info,
+            Level::Warn,
             "cleanup",
-            format!("Freed {} KB of temporary files", freed / 1024),
+            format!("Deleted {} for good: {} KB freed", ids.join(", "), freed / 1024),
         );
         Ok(freed)
     })
     .await
+}
+
+// ---- startup programs
+
+#[tauri::command]
+async fn list_startup(s: State<'_, AppState>) -> Res<Vec<StartupItem>> {
+    with(&s, "list_startup", |i| Ok(startup::list(&*i.platform))).await
+}
+
+#[tauri::command]
+async fn set_startup(s: State<'_, AppState>, id: String, enabled: bool) -> Res<Vec<StartupItem>> {
+    with(&s, "set_startup", move |i| {
+        {
+            let _guard = lock(&i.change_lock);
+            let sid = i.ensure_session()?;
+            startup::set(&i.store, &*i.platform, &sid, &id, enabled)?;
+            let _ = i.store.note(&sid, &format!("startup:{id}"));
+        }
+        i.log(
+            Level::Info,
+            "startup",
+            format!("{} {id}", if enabled { "Enabled" } else { "Disabled" }),
+        );
+        Ok(startup::list(&*i.platform))
+    })
+    .await
+}
+
+// ---- live numbers
+
+#[derive(Serialize)]
+struct LiveStats {
+    cpu_percent: f32,
+    ram_used: u64,
+    ram_total: u64,
+    processes: usize,
+}
+
+/// A few numbers that move when optimizations work: the Overview polls this while it is on screen.
+#[tauri::command]
+async fn live_stats(s: State<'_, AppState>) -> Res<LiveStats> {
+    let s = s.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut sys = s.0.stats.lock().unwrap_or_else(|e| e.into_inner());
+        sys.refresh_cpu_usage();
+        sys.refresh_memory();
+        sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+        LiveStats {
+            cpu_percent: sys.global_cpu_usage(),
+            ram_used: sys.used_memory(),
+            ram_total: sys.total_memory(),
+            processes: sys.processes().len(),
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 // ---- restart
@@ -535,14 +649,18 @@ async fn set_autostart(s: State<'_, AppState>, enabled: bool) -> Res<()> {
 }
 
 #[tauri::command]
-fn send_to_background(app: AppHandle, s: State<'_, AppState>) {
+fn minimize_window(app: AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
-        // Without the tray there is nothing to bring a hidden window back, so only hide when background mode is on.
-        let _ = if lock(&s.0.settings).run_in_background {
-            w.hide()
-        } else {
-            w.minimize()
-        };
+        let _ = w.minimize();
+    }
+}
+
+/// Goes through the normal close request, so the button, Alt+F4 and the taskbar menu all behave the same
+/// (see `on_window_event`: to the tray when background mode is on, otherwise the app exits).
+#[tauri::command]
+fn close_window(app: AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.close();
     }
 }
 
@@ -855,7 +973,7 @@ fn restore_boost(s: &Inner) {
 fn spawn_boost_watcher(app: AppHandle, state: AppState) {
     std::thread::spawn(move || {
         let mut sys = System::new();
-        let mut known: HashSet<String> = HashSet::new();
+        let mut watch = games::watch(&[]);
         let mut scanned: Option<Instant> = None;
         let mut failed: Option<String> = None;
         loop {
@@ -865,16 +983,16 @@ fn spawn_boost_watcher(app: AppHandle, state: AppState) {
                 continue;
             }
             if scanned.is_none_or(|t| t.elapsed() > Duration::from_secs(300)) {
-                known = games::exe_names(&s.refresh_games());
+                watch = games::watch(&s.refresh_games());
                 scanned = Some(Instant::now());
             }
             sys.refresh_processes(ProcessesToUpdate::All, true);
-            let running = games::running_game(
-                &known,
-                sys.processes()
-                    .values()
-                    .map(|p| p.name().to_string_lossy().into_owned()),
-            );
+            let running = watch.running(sys.processes().values().map(|p| {
+                (
+                    p.name().to_string_lossy().into_owned(),
+                    p.exe().map(|e| e.to_path_buf()),
+                )
+            }));
             boost_tick(&app, s, running, &mut failed);
         }
     });
@@ -893,6 +1011,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
             let window = app.get_webview_window("main");
+            // The window cannot be resized by hand, so make sure the fixed size fits small screens (1366x768 at 125 %).
+            if let Some(w) = &window
+                && let Ok(Some(m)) = w
+                    .current_monitor()
+                    .map(|m| m.or_else(|| w.primary_monitor().ok().flatten()))
+            {
+                let screen = m.size().to_logical::<f64>(m.scale_factor());
+                let fit = LogicalSize::new(1120f64.min(screen.width - 48.0), 740f64.min(screen.height - 96.0));
+                let _ = w.set_size(fit);
+                let _ = w.center();
+            }
             let mica = window.as_ref().is_some_and(|w| {
                 w.set_effects(EffectsBuilder::new().effect(Effect::Mica).build())
                     .is_ok()
@@ -912,6 +1041,7 @@ pub fn run() {
                 pending_restart: Mutex::new(Restart::None),
                 system: Mutex::new(None),
                 games: Mutex::new(vec![]),
+                stats: Mutex::new(System::new()),
                 boost: Mutex::new(BoostStatus::default()),
                 tray: Mutex::new(None),
                 log: Logger::new(log_dir),
@@ -965,8 +1095,12 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                // There is no close button; Alt+F4 or the taskbar menu lands here.
-                let hide = lock(&window.state::<AppState>().0.settings).run_in_background;
+                // The close button, Alt+F4 and the taskbar menu all land here. Before setup is finished there is
+                // nothing running in the background yet, so closing then really exits.
+                let hide = {
+                    let st = lock(&window.state::<AppState>().0.settings);
+                    st.run_in_background && st.setup_done
+                };
                 if hide {
                     api.prevent_close();
                     let _ = window.hide();
@@ -978,11 +1112,16 @@ pub fn run() {
             list_snapshots,
             create_snapshot,
             rollback_snapshot,
+            delete_snapshots,
             open_system_restore,
             list_tweaks,
             set_tweak,
             apply_recommended,
-            clean_temp,
+            scan_cleanup,
+            run_cleanup,
+            list_startup,
+            set_startup,
+            live_stats,
             pending_restart,
             restart_now,
             cancel_restart,
@@ -998,7 +1137,8 @@ pub fn run() {
             mica_enabled,
             get_autostart,
             set_autostart,
-            send_to_background,
+            minimize_window,
+            close_window,
             quit_app,
             get_logs,
             clear_logs,

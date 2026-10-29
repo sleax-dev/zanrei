@@ -20,7 +20,13 @@ impl Platform for Unsupported {
     fn reg_subkeys(&self, _: Hive, _: &str) -> Result<Vec<String>> {
         Ok(vec![])
     }
-    fn create_restore_point(&self, _: &str) -> Result<()> {
+    fn reg_value_names(&self, _: Hive, _: &str) -> Result<Vec<String>> {
+        Ok(vec![])
+    }
+    fn create_restore_point(&self, _: &str) -> Result<Option<u32>> {
+        Err(Error::Unsupported)
+    }
+    fn remove_restore_points(&self, _: &[u32]) -> Result<Vec<u32>> {
         Err(Error::Unsupported)
     }
     fn open_system_restore(&self) -> Result<()> {
@@ -41,13 +47,16 @@ impl Platform for Unsupported {
     fn remove_edge(&self) -> Result<()> {
         Err(Error::Unsupported)
     }
-    fn reinstall_edge(&self) -> Result<()> {
-        Err(Error::Unsupported)
-    }
     fn installed_apps(&self, _: &[&str]) -> Result<Vec<String>> {
         Ok(vec![])
     }
     fn remove_apps(&self, _: &[&str]) -> Result<()> {
+        Err(Error::Unsupported)
+    }
+    fn recycle_bin_size(&self) -> Result<u64> {
+        Ok(0)
+    }
+    fn empty_recycle_bin(&self) -> Result<()> {
         Err(Error::Unsupported)
     }
 }

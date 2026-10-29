@@ -2,6 +2,7 @@ import { Button, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle 
 import { Open20Regular } from "@fluentui/react-icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
+import { SkeletonFacts } from "../components/Skeleton";
 import { gb, type Gpu } from "../lib/api";
 import { fmtDay } from "../lib/format";
 import { useApp } from "../state";
@@ -28,6 +29,11 @@ export function Graphics() {
         </div>
       </div>
 
+      {system === null && (
+        <section className="panel">
+          <SkeletonFacts count={4} status={t("common.loading")} />
+        </section>
+      )}
       {system && system.gpus.length === 0 && <p className="muted">{t("overview.noGpu")}</p>}
       {system?.gpus.map((g) => {
         const old = g.driver_date_unix !== null && now - g.driver_date_unix > TWO_YEARS;

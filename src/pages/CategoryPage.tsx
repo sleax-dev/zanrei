@@ -2,6 +2,8 @@ import { Button, Spinner } from "@fluentui/react-components";
 import { Search20Regular } from "@fluentui/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DiskCleanup } from "../components/DiskCleanup";
+import { SkeletonRows } from "../components/Skeleton";
 import { TweakRow } from "../components/TweakRow";
 import type { Category, TweakInfo } from "../lib/api";
 import { type Page, TWEAK_PAGES } from "../nav";
@@ -52,7 +54,8 @@ export function CategoryPage({ page }: { page: Page }) {
         </label>
       </div>
 
-      {tweaks === null && <Spinner label={t("common.loading")} />}
+      {page === "cleanup" && !query && <DiskCleanup />}
+      {tweaks === null && <SkeletonRows count={6} status={t("common.loading")} />}
       {empty && <p className="muted">{t("optimize.empty")}</p>}
 
       {suggested.length > 0 && (
@@ -69,7 +72,9 @@ export function CategoryPage({ page }: { page: Page }) {
 
       {sections.map(([c, list]) => (
         <section key={c ?? "all"} className="stack">
-          {(c || suggested.length > 0) && <div className="sect-head"><h2>{c ? t(`optimize.category.${c}`) : t("optimize.more")}</h2></div>}
+          {(c || suggested.length > 0 || page === "cleanup") && (
+            <div className="sect-head"><h2>{c ? t(`optimize.category.${c}`) : page === "cleanup" ? t("disk.software") : t("optimize.more")}</h2></div>
+          )}
           <div className="rows">{list.map((x) => <TweakRow key={x.id} tweak={x} />)}</div>
         </section>
       ))}

@@ -14,6 +14,11 @@ export default {
     "search": "بحث"
   },
   "setup": {
+    "steps": {
+      "welcome": "مرحبًا",
+      "recommend": "موصى به",
+      "done": "تم"
+    },
     "scan": {
       "working": "جارٍ الفحص…"
     },
@@ -43,8 +48,13 @@ export default {
     "restore": "الاستعادة",
     "settings": "الإعدادات"
   },
+  "splash": {
+    "tagline": "ويندوز مُحسَّن. كل تغيير يمكن التراجع عنه."
+  },
   "titlebar": {
-    "background": "إرسال إلى الخلفية"
+    "minimize": "تصغير",
+    "close": "إغلاق",
+    "closeToTray": "إغلاق (يستمر في العمل في الخلفية)"
   },
   "overview": {
     "title": "جهازك",
