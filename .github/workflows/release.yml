@@ -78,5 +78,5 @@ jobs:
             Installed copies update themselves; see CHANGELOG.md for what changed.
           releaseDraft: false
           prerelease: false
-          includeUpdaterJson: true
+          uploadUpdaterJson: true
           args: --target i686-pc-windows-msvc --bundles nsis ${{ steps.updater.outputs.args }}

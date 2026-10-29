@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ICONS, NAV_GROUPS, type Page, TWEAK_PAGES } from "../nav";
 import { CategoryPage } from "../pages/CategoryPage";
 import { Graphics } from "../pages/Graphics";
+import { Guide } from "../pages/Guide";
 import { Library } from "../pages/Library";
 import { Logs } from "../pages/Logs";
 import { Overview } from "../pages/Overview";
@@ -40,6 +41,7 @@ function PageView({ page }: { page: Page }) {
   if (page === "startup") return <Startup />;
   if (page === "library") return <Library />;
   if (page === "graphics") return <Graphics />;
+  if (page === "guide") return <Guide />;
   if (page === "restore") return <Restore />;
   if (page === "logs") return <Logs />;
   return <SettingsPage />;

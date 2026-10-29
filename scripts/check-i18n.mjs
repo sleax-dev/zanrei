@@ -4,6 +4,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import en from "../src/i18n/locales/en.ts";
 import tr from "../src/i18n/locales/tr.ts";
+import { ATLAS_FACTS, FRESH_GAINS, GROUPS, INSTALL_STEPS, ITEMS } from "../src/guide.ts";
 
 const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
 const sources = walk("src").filter((f) => /\.tsx?$/.test(f) && !f.includes("/locales/"));
@@ -17,7 +18,7 @@ const ids = [...catalog.matchAll(/(?:\bt\(\s*|id:\s*)"([a-z_]+)"/g)].map((m) => 
 for (const id of ids) ["name", "desc"].forEach((k) => keys.add(`tweaks.${id}.${k}`));
 
 // keys built at runtime, listed here so they are checked too
-const PAGES = ["overview", "privacy", "performance", "startup", "gaming", "windows", "cleanup", "library", "graphics", "restore", "logs", "settings"];
+const PAGES = ["overview", "privacy", "performance", "startup", "gaming", "windows", "cleanup", "library", "graphics", "guide", "restore", "logs", "settings"];
 const dynamic = {
   restart: ["Explorer", "SignOut", "Reboot"],
   "optimize.risk": ["Safe", "Moderate", "Advanced"],
@@ -36,6 +37,23 @@ for (const k of ["User", "AllUsers"]) keys.add(`startup.scope.${k}`);
 for (const k of ["welcome", "recommend", "done"]) keys.add(`setup.steps.${k}`);
 for (const o of ["gpu", "fso", "priority"]) ["name", "desc"].forEach((k) => keys.add(`games.opt.${o}.${k}`));
 for (const m of ["manual", "recommended", "auto"]) ["name", "desc"].forEach((k) => keys.add(`setup.mode.${m}.${k}`));
+
+for (const i of ITEMS) {
+  const ks = ["title", "why", ...Array.from({ length: i.steps }, (_, n) => `s${n + 1}`), ...(i.caution ? ["caution"] : [])];
+  ks.forEach((k) => keys.add(`guide.items.${i.id}.${k}`));
+  keys.add(`guide.impact.${i.impact}`);
+  keys.add(`guide.effort.${i.effort}`);
+  if (i.goto) keys.add(`guide.goto.${i.goto}`);
+  for (const l of i.links ?? []) keys.add(`guide.link.${l.key}`);
+}
+for (const g of GROUPS) ["title", "desc"].forEach((k) => keys.add(`guide.group.${g}.${k}`));
+for (const s of INSTALL_STEPS) {
+  ["title", "body"].forEach((k) => keys.add(`guide.install.step.${s.id}.${k}`));
+  for (const l of s.links ?? []) keys.add(`guide.link.${l.key}`);
+}
+for (const k of FRESH_GAINS) keys.add(`guide.fresh.gain.${k}`);
+for (const k of ATLAS_FACTS) keys.add(`guide.atlas.fact.${k}`);
+for (const k of ["site", "docs", "github", "youtube", "win10Ended", "requirements"]) keys.add(`guide.link.${k}`);
 
 const at = (obj, key) => key.split(".").reduce((o, k) => (o && typeof o === "object" ? o[k] : undefined), obj);
 // a key with a count has English plural forms (key_one / key_other); other languages may keep a single form

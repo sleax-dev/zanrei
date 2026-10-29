@@ -248,6 +248,52 @@ button { font: inherit; }
 .meter { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); overflow: hidden; margin-top: 4px; }
 .meter i { display: block; height: 100%; background: var(--silver); border-radius: 4px; transition: width 0.6s var(--ease); }
 
+/* ---- overview: Windows identity, notices, hardware */
+.os-strip { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+.os-strip svg { color: var(--accent); flex: none; }
+.os-badge { padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; color: #0a0a0c; background: var(--silver); }
+.chip { display: inline-block; padding: 0 7px; margin-inline-start: 6px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surface-2); vertical-align: 1px; }
+.notice { background: var(--surface); border: 1px solid var(--border); border-inline-start: 3px solid var(--accent); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+.notice.warn { border-inline-start-color: var(--warn); }
+.notice.warn .notice-head svg { color: var(--warn); }
+.notice-head { display: flex; align-items: center; gap: 10px; }
+.notice-head svg { color: var(--accent); flex: none; }
+.notice h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.notice p { margin: 0; color: var(--muted); }
+.notice ul { margin: 0; padding-inline-start: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.notice-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.hw-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hw-card { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); min-width: 0; }
+.hw-head { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.hw-head svg { color: var(--accent); width: 20px; height: 20px; }
+.hw-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hw-body b { font-weight: 600; word-break: break-word; }
+.disk { display: flex; flex-direction: column; gap: 4px; }
+.disk-line { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.meter.full i { background: var(--bad); }
+@media (max-width: 760px) { .hw-grid { grid-template-columns: 1fr; } }
+
+/* ---- guide */
+.g-intro { margin: 0; max-width: 70ch; }
+.g-group { display: flex; flex-direction: column; gap: 6px; }
+.g-group h2 { margin: 8px 0 0; font-size: 16px; font-weight: 600; }
+.g-group > p { margin: 0 0 4px; }
+.g-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.g-tag { padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surface-2); }
+.g-tag.impact-big { color: #0a0a0c; background: var(--silver); }
+.g-body { padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px; max-width: 76ch; }
+.g-body p { margin: 0; color: var(--muted); }
+.g-steps { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 6px; }
+.g-steps li::marker { color: var(--accent); font-weight: 600; }
+.g-caution { margin: 0; padding: 8px 12px; border-radius: 8px; background: rgba(255, 201, 77, 0.08); border: 1px solid rgba(255, 201, 77, 0.25); color: var(--text) !important; font-size: 13px; }
+.g-list { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 5px; }
+.g-atlas { border-color: rgba(212, 216, 223, 0.28); }
+.g-flow { list-style: none; counter-reset: step; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.g-flow > li { counter-increment: step; display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
+.g-flow > li::before { content: counter(step); display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; color: #0a0a0c; background: var(--silver); }
+.g-flow-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
+
 /* ---- things that cannot be undone say so */
 .row.irreversible { box-shadow: inset 3px 0 0 rgba(255, 107, 107, 0.7); }
 [dir="rtl"] .row.irreversible { box-shadow: inset -3px 0 0 rgba(255, 107, 107, 0.7); }

@@ -85,6 +85,7 @@ Every setting in the catalog was checked against widely used open-source tools a
 - [x] Automatic updates
 - [ ] Code signing for the installer
 - [x] Startup program manager, disk cleanup with measuring, restore point deletion
+- [x] Guide for what only the user can do (BIOS, hardware, drivers, clean install), AtlasOS detection
 - [x] Professional game detection (launcher manifests, folder-based process matching)
 - [ ] Vendor-specific graphics driver profiles
 

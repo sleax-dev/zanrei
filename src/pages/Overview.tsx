@@ -2,7 +2,8 @@ import { Button, Spinner } from "@fluentui/react-components";
 import { CheckmarkCircle20Regular, Warning16Regular } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
 import { LivePanel } from "../components/LivePanel";
-import { PcSummary } from "../components/PcSummary";
+import { HardwareGrid } from "../components/HardwareGrid";
+import { OsNotice, WindowsStrip } from "../components/OsNotice";
 import { Skeleton, SkeletonFacts } from "../components/Skeleton";
 import { useApp } from "../state";
 
@@ -28,7 +29,10 @@ export function Overview() {
             )}
           </p>
         )}
+        {system && <WindowsStrip info={system} />}
       </section>
+
+      {system && <OsNotice info={system} />}
 
       {todo.length > 0 && (
         <section className="panel">
@@ -55,7 +59,7 @@ export function Overview() {
 
       <section className="panel">
         <div className="sect-head"><h2>{t("overview.title")}</h2></div>
-        {system ? <PcSummary info={system} /> : <SkeletonFacts count={5} status={t("overview.loading")} />}
+        {system ? <HardwareGrid info={system} /> : <SkeletonFacts count={5} status={t("overview.loading")} />}
       </section>
     </div>
   );

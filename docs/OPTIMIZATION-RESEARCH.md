@@ -76,6 +76,21 @@ game's known executables **or** runs from inside the game's folder, so a differe
 Crash handlers, helpers and launchers never trigger it, and a game added by hand matches by name only (its folder,
 often Downloads, says nothing about other programs).
 
+## Modified Windows (AtlasOS, ReviOS)
+
+Some users start from a modified Windows instead of tuning the stock one. Zanrei recognises two of them, because both
+write an identifiable entry into `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation` when they install:
+
+| Project | Marker | Source |
+|---|---|---|
+| AtlasOS | `Manufacturer = "Atlas Team"`, `Model = "Atlas Playbook v0.5.0"` | `Atlas-OS/Atlas`, `config-oem-information.yml` |
+| ReviOS | `Manufacturer = "Revision"` | `meetrevision/playbook`, `oem-info.yml` |
+
+A hand-made ISO leaves nothing to recognise, so "not detected" never means "stock Windows". Facts the Guide page states
+about Atlas come from its own documentation (docs.atlasos.net) as of v0.5.0: Windows 11 only (builds 26100 and 26200),
+Windows 10 no longer supported, Home not supported, removing it means reinstalling Windows, System Restore is left on
+by default. Re-check them when Atlas ships a new release.
+
 ## What actually helps a weak PC
 
 Ordered by how much we expect them to matter, with the honest caveat that **we have not benchmarked them**. That is why

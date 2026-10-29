@@ -4,6 +4,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-29
+
+### Added
+- Guide page: what only you can do (BIOS memory profile and Resizable BAR, dual channel, SSD, cooling, drivers, refresh rate, in-game settings), and a "fresh start" section with how to reinstall Windows 10 or 11, a note on Windows 10 having reached end of support, and AtlasOS for enthusiasts. In English and Turkish.
+- Overview recognises AtlasOS and ReviOS from the OEM entries their installers write, shows the Windows edition and feature update, and explains what that means for Zanrei. Windows 10 gets a notice that it no longer receives free security updates.
+- Overview hardware shown as cards, with how full each drive is.
+
+### Changed
+- New logo and icons.
+
 ## [0.4.0] - 2026-10-29
 
 ### Added

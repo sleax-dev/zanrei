@@ -43,11 +43,23 @@ export interface DiskInfo {
   free_bytes: number;
 }
 
+export interface Flavor {
+  id: "atlas" | "revios";
+  name: string;
+  version: string | null;
+}
+
 export interface SystemInfo {
   os_name: string;
   os_version: string;
   os_build: string;
   is_windows_11: boolean;
+  /** "Pro", "Home", ... */
+  edition: string;
+  /** Feature update such as "24H2". */
+  display_version: string;
+  /** A modified Windows that names itself in the OEM information (AtlasOS, ReviOS). */
+  flavor: Flavor | null;
   cpu_name: string;
   physical_cores: number;
   logical_cores: number;
