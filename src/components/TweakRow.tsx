@@ -35,7 +35,7 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
   };
 
   return (
-    <div className={tweak.reversible ? "row" : "row irreversible"}>
+    <div className="row">
       <div className="info">
         <div className="name">{t(`tweaks.${tweak.id}.name`)}</div>
         <div className="desc">{t(`tweaks.${tweak.id}.desc`)}</div>

@@ -31,22 +31,22 @@ export function LivePanel() {
   }, [snapshots]);
 
   const ramPct = stats ? Math.round((stats.ram_used / stats.ram_total) * 100) : 0;
-  const cells: [string, string | null, number | null][] = [
-    [t("live.cpu"), stats && `${Math.round(stats.cpu_percent)} %`, stats ? stats.cpu_percent : null],
-    [t("live.ram"), stats && t("live.ramOf", { used: gb(stats.ram_used), total: gb(stats.ram_total) }), stats ? ramPct : null],
-    [t("live.processes"), stats && String(stats.processes), null],
-    [t("live.startup"), startup === null ? null : String(startup), null],
+  // [label, value, small suffix beside the value, meter percent]
+  const cells: [string, string | null, string | null, number | null][] = [
+    [t("live.cpu"), stats && `${Math.round(stats.cpu_percent)} %`, null, stats ? stats.cpu_percent : null],
+    [t("live.ram"), stats && gb(stats.ram_used), stats && t("live.ramTotal", { total: gb(stats.ram_total) }), stats ? ramPct : null],
+    [t("live.processes"), stats && String(stats.processes), null, null],
+    [t("live.startup"), startup === null ? null : String(startup), null, null],
   ];
   return (
-    <section className="panel">
-      <div className="sect-head"><h2>{t("live.title")}</h2></div>
-      <p className="muted small">{t("live.desc")}</p>
+    <section className="block">
+      <div className="block-head"><h2>{t("live.title")}</h2><p className="muted small">{t("live.desc")}</p></div>
       <div className="live-grid" aria-live="off">
-        {cells.map(([label, value, pct]) => (
+        {cells.map(([label, value, suffix, pct]) => (
           <div className="live-cell" key={label}>
             <span className="muted small">{label}</span>
-            {value === null ? <Skeleton w={90} h={20} /> : <b>{value}</b>}
-            {pct !== null && <span className="meter" aria-hidden><i style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} /></span>}
+            {value === null ? <Skeleton w={90} h={20} /> : <b>{value}{suffix && <small>{suffix}</small>}</b>}
+            {pct !== null && <span className="meter" aria-hidden><i style={{ transform: `scaleX(${Math.min(100, Math.max(0, pct)) / 100})` }} /></span>}
           </div>
         ))}
       </div>

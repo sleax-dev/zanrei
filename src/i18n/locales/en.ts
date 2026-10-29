@@ -106,7 +106,7 @@ const en = {
     desc: "These numbers move when optimizations work. Compare them after a restart.",
     cpu: "Processor",
     ram: "Memory in use",
-    ramOf: "{{used}} of {{total}}",
+    ramTotal: "/ {{total}}",
     processes: "Running processes",
     startup: "Programs starting with Windows",
   },

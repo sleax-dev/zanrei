@@ -13,10 +13,14 @@ const brand: BrandVariants = {
   90: "#A0A7B2", 100: "#B4BAC4", 110: "#C5CAD2", 120: "#D3D7DD", 130: "#E0E3E8", 140: "#EBEDF0", 150: "#F4F5F7", 160: "#FAFAFB",
 };
 
+// Inter is the closest open face to Apple's SF Pro (SF itself may not be redistributed). It ships with the app, so it needs no network.
+export const FONT = '"Inter Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif';
+
 const base = createDarkTheme(brand);
 
 export const theme: Theme = {
   ...base,
+  fontFamilyBase: FONT,
   colorNeutralBackground1: "#141417",
   colorNeutralBackground2: "#0F0F12",
   colorNeutralBackground3: "#0A0A0C",

@@ -57,8 +57,8 @@ export function Overview() {
 
       <LivePanel />
 
-      <section className="panel">
-        <div className="sect-head"><h2>{t("overview.title")}</h2></div>
+      <section className="block">
+        <div className="block-head"><h2>{t("overview.title")}</h2></div>
         {system ? <HardwareGrid info={system} /> : <SkeletonFacts count={5} status={t("overview.loading")} />}
       </section>
     </div>

@@ -4,6 +4,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-29
+
+### Changed
+- Inter (bundled with the app) replaces Segoe UI as the interface font, in our own UI and in the Fluent controls.
+- Overview: the live memory figure no longer wraps ("14 GB / 32 GB" on one line); "Right now" and hardware are no longer cards inside a card; tighter spacing; hardware labels are plain text instead of spaced capitals.
+- Notices and irreversible rows no longer use a coloured side bar; progress meters animate with a transform.
+
 ## [0.5.0] - 2026-10-29
 
 ### Added

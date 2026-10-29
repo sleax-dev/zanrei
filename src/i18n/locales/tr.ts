@@ -108,7 +108,7 @@ export default {
     desc: "Optimizasyonlar işe yaradıkça bu sayılar değişir. Yeniden başlattıktan sonra karşılaştır.",
     cpu: "İşlemci",
     ram: "Kullanılan bellek",
-    ramOf: "{{total}} içinde {{used}}",
+    ramTotal: "/ {{total}}",
     processes: "Çalışan işlem",
     startup: "Windows ile açılan program",
   },
