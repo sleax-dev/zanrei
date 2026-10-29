@@ -1098,7 +1098,8 @@ pub fn run() {
                 // The close button, Alt+F4 and the taskbar menu all land here. Before setup is finished there is
                 // nothing running in the background yet, so closing then really exits.
                 let hide = {
-                    let st = lock(&window.state::<AppState>().0.settings);
+                    let state = window.state::<AppState>();
+                    let st = lock(&state.0.settings);
                     st.run_in_background && st.setup_done
                 };
                 if hide {
