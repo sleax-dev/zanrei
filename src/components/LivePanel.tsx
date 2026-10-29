@@ -41,9 +41,9 @@ export function LivePanel() {
   return (
     <section className="block">
       <div className="block-head"><h2>{t("live.title")}</h2><p className="muted small">{t("live.desc")}</p></div>
-      <div className="live-grid" aria-live="off">
+      <div className="stats" aria-live="off">
         {cells.map(([label, value, suffix, pct]) => (
-          <div className="live-cell" key={label}>
+          <div className="stat" key={label}>
             <span className="muted small">{label}</span>
             {value === null ? <Skeleton w={90} h={20} /> : <b>{value}{suffix && <small>{suffix}</small>}</b>}
             {pct !== null && <span className="meter" aria-hidden><i style={{ transform: `scaleX(${Math.min(100, Math.max(0, pct)) / 100})` }} /></span>}

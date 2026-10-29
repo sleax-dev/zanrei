@@ -1,10 +1,12 @@
 import { Switch } from "@fluentui/react-components";
-import { Search20Regular, Warning16Regular } from "@fluentui/react-icons";
+import { Warning16Regular } from "@fluentui/react-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SkeletonRows } from "../components/Skeleton";
 import { api, errorText, type StartupItem } from "../lib/api";
 import { useApp } from "../state";
+import { PageHead } from "../components/PageHead";
+import { SearchBox } from "../components/SearchBox";
 
 /** Programs that start with Windows. Switching one off only stops it launching; nothing is uninstalled. */
 export function Startup() {
@@ -45,16 +47,9 @@ export function Startup() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t("nav.startup")}</h1>
-          <p>{t("pageDesc.startup")}</p>
-        </div>
-        <label className="search">
-          <Search20Regular />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("common.search")} aria-label={t("common.search")} />
-        </label>
-      </div>
+      <PageHead title={t("nav.startup")} desc={t("pageDesc.startup")}>
+        <SearchBox value={query} onChange={setQuery} />
+      </PageHead>
 
       {items === null ? (
         <SkeletonRows count={6} status={t("common.loading")} />

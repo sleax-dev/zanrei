@@ -1,5 +1,4 @@
 import { Button, Spinner } from "@fluentui/react-components";
-import { Search20Regular } from "@fluentui/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DiskCleanup } from "../components/DiskCleanup";
@@ -8,6 +7,8 @@ import { TweakRow } from "../components/TweakRow";
 import type { Category, TweakInfo } from "../lib/api";
 import { type Page, TWEAK_PAGES } from "../nav";
 import { useApp } from "../state";
+import { PageHead } from "../components/PageHead";
+import { SearchBox } from "../components/SearchBox";
 
 const pendingState = (x: TweakInfo) => x.state === "NotApplied" || x.state === "Partial";
 
@@ -43,16 +44,9 @@ export function CategoryPage({ page }: { page: Page }) {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t(`nav.${page}`)}</h1>
-          <p>{t(`pageDesc.${page}`)}</p>
-        </div>
-        <label className="search">
-          <Search20Regular />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("common.search")} aria-label={t("common.search")} />
-        </label>
-      </div>
+      <PageHead title={t(`nav.${page}`)} desc={t(`pageDesc.${page}`)}>
+        <SearchBox value={query} onChange={setQuery} />
+      </PageHead>
 
       {page === "cleanup" && !query && <DiskCleanup />}
       {tweaks === null && <SkeletonRows count={6} status={t("common.loading")} />}

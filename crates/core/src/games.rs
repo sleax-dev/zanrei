@@ -3,10 +3,10 @@
 //! folder names, and tells running games apart by where their process lives, not just by file name. Settings are
 //! registry values written through the snapshot journal.
 
-use crate::Result;
 use crate::kv::{flags_add, flags_has, flags_remove, kv_get, kv_remove, kv_set};
 use crate::platform::{Hive, Platform, RegKey, RegValue};
 use crate::restore::Store;
+use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -580,7 +580,25 @@ pub fn options(p: &dyn Platform, exe: &str) -> Result<GameOptions> {
     })
 }
 
+/// The UI hands us this path and it becomes a registry value name (and, for priority, a key name under Image File
+/// Execution Options), so it must look like what it is: the full path of a program.
+pub fn check_exe(exe: &str) -> Result<()> {
+    let name = exe.rsplit(['\\', '/']).next().unwrap_or_default();
+    let ok = exe.len() <= 520
+        && exe.contains(['\\', '/'])
+        && !exe.chars().any(char::is_control)
+        && !exe.split(['\\', '/']).any(|part| part == "..")
+        && name.len() > ".exe".len()
+        && name.to_ascii_lowercase().ends_with(".exe");
+    if ok {
+        Ok(())
+    } else {
+        Err(Error::Msg("not the path of a program".into()))
+    }
+}
+
 pub fn set_option(store: &Store, p: &dyn Platform, sid: &str, exe: &str, option: GameOption, on: bool) -> Result<()> {
+    check_exe(exe)?;
     match option {
         GameOption::HighGpu => {
             let key = gpu_key(exe);
@@ -641,6 +659,23 @@ mod tests {
             .map(|(n, p)| (n.to_string(), p.map(PathBuf::from)))
             .collect::<Vec<_>>()
             .into_iter()
+    }
+
+    #[test]
+    fn only_program_paths_are_accepted() {
+        assert!(check_exe(r"C:\Games\Foo\Foo.EXE").is_ok());
+        assert!(check_exe("/games/foo/foo.exe").is_ok());
+        for bad in [
+            "",
+            "foo.exe",
+            r"C:\Games\..\Windows\foo.exe",
+            r"C:\Games\",
+            r"C:\Games\.exe",
+            r"C:\Games\foo.txt",
+            "C:\\a\u{0}b.exe",
+        ] {
+            assert!(check_exe(bad).is_err(), "{bad:?}");
+        }
     }
 
     #[test]

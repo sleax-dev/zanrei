@@ -5,6 +5,7 @@ import { LanguagePicker } from "../components/LanguagePicker";
 import { api, errorText, type Mode } from "../lib/api";
 import { fmtDateTime } from "../lib/format";
 import { useApp } from "../state";
+import { PageHead } from "../components/PageHead";
 
 const MODES: { value: Mode; key: "manual" | "recommended" | "auto" }[] = [
   { value: "Manual", key: "manual" },
@@ -45,12 +46,7 @@ export function SettingsPage() {
   const modeKey = MODES.find((m) => m.value === settings.mode)?.key ?? "recommended";
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t("nav.settings")}</h1>
-          <p>{t("pageDesc.settings")}</p>
-        </div>
-      </div>
+      <PageHead title={t("nav.settings")} desc={t("pageDesc.settings")} />
 
       <section className="stack">
         <div className="sect-head"><h2>{t("settings.general")}</h2></div>

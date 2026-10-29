@@ -56,7 +56,7 @@ the description.
 
 ## Game detection
 
-Guessing from folder names is how simple tools get it wrong. Zanrei now reads what each launcher already knows:
+Guessing from folder names is how simple tools get it wrong. Zanrei reads what each launcher already knows:
 
 | Launcher | Source |
 |---|---|
@@ -71,7 +71,7 @@ Guessing from folder names is how simple tools get it wrong. Zanrei now reads wh
 
 Installers, redistributables, crash handlers, anti-cheat, engine folders and tiny stubs are never picked as "the game".
 
-Telling that a game is *running* is separate from finding it. Game Boost now matches a process when it is one of the
+Telling that a game is *running* is separate from finding it. Game Boost matches a process when it is one of the
 game's known executables **or** runs from inside the game's folder, so a differently named binary still counts.
 Crash handlers, helpers and launchers never trigger it, and a game added by hand matches by name only (its folder,
 often Downloads, says nothing about other programs).
@@ -94,7 +94,7 @@ by default. Re-check them when Atlas ships a new release.
 ## What actually helps a weak PC
 
 Ordered by how much we expect them to matter, with the honest caveat that **we have not benchmarked them**. That is why
-the Overview now shows live processor, memory, process-count and startup numbers: compare them yourself before and
+the Overview shows live processor, memory, process-count and startup numbers: compare them yourself before and
 after a restart.
 
 1. **Fewer things starting with Windows.** Usually the largest, most reliable change on an older PC. (Startup page.)

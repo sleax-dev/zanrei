@@ -570,6 +570,7 @@ async fn set_game_option(s: State<'_, AppState>, exe: String, option: GameOption
 #[tauri::command]
 async fn add_custom_game(s: State<'_, AppState>, name: String, exe: String) -> Res<()> {
     with(&s, "add_custom_game", move |i| {
+        games::check_exe(&exe)?;
         i.update_settings(|st| {
             if !st.custom_games.iter().any(|g| g.exe.eq_ignore_ascii_case(&exe)) {
                 st.custom_games.push(games::CustomGame { name, exe });

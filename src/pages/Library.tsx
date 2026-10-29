@@ -1,12 +1,13 @@
 import { Button, Spinner, Switch } from "@fluentui/react-components";
 import { Add20Regular, ArrowClockwise20Regular, ChevronDown20Regular, Delete20Regular } from "@fluentui/react-icons";
 import { open as pickFile } from "@tauri-apps/plugin-dialog";
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SkeletonRows } from "../components/Skeleton";
 import { api, errorText, type GameInfo, type GameOption } from "../lib/api";
 import { useApp } from "../state";
+import { Collapse } from "../components/Collapse";
+import { PageHead } from "../components/PageHead";
 
 const OPTIONS: { key: GameOption; field: "high_gpu" | "no_fso" | "high_priority"; text: "gpu" | "fso" | "priority" }[] = [
   { key: "HighGpu", field: "high_gpu", text: "gpu" },
@@ -63,16 +64,12 @@ export function Library() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t("nav.library")}</h1>
-          <p>{t("pageDesc.library")}</p>
-        </div>
+      <PageHead title={t("nav.library")} desc={t("pageDesc.library")}>
         <div className="btn-row">
           <Button icon={<ArrowClockwise20Regular />} onClick={() => void load()}>{t("games.rescan")}</Button>
           <Button icon={<Add20Regular />} onClick={() => void add()}>{t("games.add")}</Button>
         </div>
-      </div>
+      </PageHead>
 
       <div className="rows">
         <div className="row">
@@ -105,30 +102,26 @@ export function Library() {
                 </span>
                 <ChevronDown20Regular className={isOpen ? "chev open" : "chev"} />
               </button>
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }} className="game-body">
-                    <div className="selectable path">{g.exe}</div>
-                    {OPTIONS.map((o) => (
-                      <div className="row sub" key={o.key}>
-                        <div className="info">
-                          <div className="name">{t(`games.opt.${o.text}.name`)}</div>
-                          <div className="desc">{t(`games.opt.${o.text}.desc`)}</div>
-                        </div>
-                        <div className="ctl">
-                          {working === `${g.id}:${o.key}` && <Spinner size="tiny" />}
-                          <Switch checked={g.options[o.field]} disabled={working !== null} onChange={(_, d) => void set(g, o.key, d.checked)} aria-label={t(`games.opt.${o.text}.name`)} />
-                        </div>
-                      </div>
-                    ))}
-                    {g.launcher === "Custom" && (
-                      <div className="game-foot">
-                        <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={() => void remove(g)}>{t("games.removeFromList")}</Button>
-                      </div>
-                    )}
-                  </motion.div>
+              <Collapse open={isOpen} className="game-body">
+                <div className="selectable path">{g.exe}</div>
+                {OPTIONS.map((o) => (
+                  <div className="row sub" key={o.key}>
+                    <div className="info">
+                      <div className="name">{t(`games.opt.${o.text}.name`)}</div>
+                      <div className="desc">{t(`games.opt.${o.text}.desc`)}</div>
+                    </div>
+                    <div className="ctl">
+                      {working === `${g.id}:${o.key}` && <Spinner size="tiny" />}
+                      <Switch checked={g.options[o.field]} disabled={working !== null} onChange={(_, d) => void set(g, o.key, d.checked)} aria-label={t(`games.opt.${o.text}.name`)} />
+                    </div>
+                  </div>
+                ))}
+                {g.launcher === "Custom" && (
+                  <div className="game-foot">
+                    <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={() => void remove(g)}>{t("games.removeFromList")}</Button>
+                  </div>
                 )}
-              </AnimatePresence>
+              </Collapse>
             </div>
           );
         })}

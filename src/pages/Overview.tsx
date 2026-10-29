@@ -2,7 +2,7 @@ import { Button, Spinner } from "@fluentui/react-components";
 import { CheckmarkCircle20Regular, Warning16Regular } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
 import { LivePanel } from "../components/LivePanel";
-import { HardwareGrid } from "../components/HardwareGrid";
+import { HardwareList } from "../components/HardwareList";
 import { OsNotice, WindowsStrip } from "../components/OsNotice";
 import { Skeleton, SkeletonFacts } from "../components/Skeleton";
 import { useApp } from "../state";
@@ -59,7 +59,7 @@ export function Overview() {
 
       <section className="block">
         <div className="block-head"><h2>{t("overview.title")}</h2></div>
-        {system ? <HardwareGrid info={system} /> : <SkeletonFacts count={5} status={t("overview.loading")} />}
+        {system ? <HardwareList info={system} /> : <div className="panel"><SkeletonFacts count={4} status={t("overview.loading")} /></div>}
       </section>
     </div>
   );

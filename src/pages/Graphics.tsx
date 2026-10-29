@@ -6,6 +6,7 @@ import { SkeletonFacts } from "../components/Skeleton";
 import { gb, type Gpu } from "../lib/api";
 import { fmtDay } from "../lib/format";
 import { useApp } from "../state";
+import { PageHead } from "../components/PageHead";
 
 const DRIVER_PAGES: Record<Gpu["vendor"], string | null> = {
   Nvidia: "https://www.nvidia.com/Download/index.aspx",
@@ -22,12 +23,7 @@ export function Graphics() {
   const now = Date.now() / 1000;
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t("nav.graphics")}</h1>
-          <p>{t("pageDesc.graphics")}</p>
-        </div>
-      </div>
+      <PageHead title={t("nav.graphics")} desc={t("pageDesc.graphics")} />
 
       {system === null && (
         <section className="panel">

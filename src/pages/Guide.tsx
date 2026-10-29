@@ -1,13 +1,14 @@
 import { Button, Tab, TabList } from "@fluentui/react-components";
 import { ChevronDown20Regular, Open20Regular } from "@fluentui/react-icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ATLAS_FACTS, ATLAS_LINKS, FRESH_GAINS, GROUPS, INSTALL_STEPS, ITEMS, REQUIREMENTS_URL, REVIOS_URL, WIN10_ENDED_URL, type GuideItem,
 } from "../guide";
 import { useApp } from "../state";
+import { Collapse } from "../components/Collapse";
+import { PageHead } from "../components/PageHead";
 
 type Link = { key: string; url: string };
 
@@ -37,28 +38,21 @@ function Item({ item, open, toggle }: { item: GuideItem; open: boolean; toggle: 
         </span>
         <ChevronDown20Regular className={open ? "chev open" : "chev"} />
       </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }} className="game-body"
-          >
-            <div className="g-body selectable">
-              <p>{t(`guide.items.${item.id}.why`)}</p>
-              <ol className="g-steps">
-                {Array.from({ length: item.steps }, (_, i) => <li key={i}>{t(`guide.items.${item.id}.s${i + 1}`)}</li>)}
-              </ol>
-              {item.caution && <p className="g-caution">{t(`guide.items.${item.id}.caution`)}</p>}
-              {(item.links || item.goto) && (
-                <div className="notice-actions">
-                  {item.goto && <Button size="small" appearance="primary" onClick={() => setPage(item.goto!)}>{t(`guide.goto.${item.goto}`)}</Button>}
-                  {item.links && <Links links={item.links} />}
-                </div>
-              )}
+      <Collapse open={open} className="game-body">
+        <div className="g-body selectable">
+          <p>{t(`guide.items.${item.id}.why`)}</p>
+          <ol className="g-steps">
+            {Array.from({ length: item.steps }, (_, i) => <li key={i}>{t(`guide.items.${item.id}.s${i + 1}`)}</li>)}
+          </ol>
+          {item.caution && <p className="g-caution">{t(`guide.items.${item.id}.caution`)}</p>}
+          {(item.links || item.goto) && (
+            <div className="notice-actions">
+              {item.goto && <Button size="small" appearance="primary" onClick={() => setPage(item.goto!)}>{t(`guide.goto.${item.goto}`)}</Button>}
+              {item.links && <Links links={item.links} />}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      </Collapse>
     </div>
   );
 }
@@ -147,12 +141,7 @@ export function Guide() {
   const [tab, setTab] = useState<"yourself" | "fresh">("yourself");
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t("nav.guide")}</h1>
-          <p>{t("pageDesc.guide")}</p>
-        </div>
-      </div>
+      <PageHead title={t("nav.guide")} desc={t("pageDesc.guide")} />
       <TabList selectedValue={tab} onTabSelect={(_, d) => setTab(d.value as "yourself" | "fresh")}>
         <Tab value="yourself">{t("guide.tab.yourself")}</Tab>
         <Tab value="fresh">{t("guide.tab.fresh")}</Tab>

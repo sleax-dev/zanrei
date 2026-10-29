@@ -4,6 +4,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-29
+
+### Changed
+- Overview: hardware is one list with a fill bar per drive instead of four cards, and the live numbers are one strip; shorter label for startup programs.
+- Page header, search box and collapsible sections are shared components instead of copies in each page.
+- README rewritten with screenshots; CONTRIBUTING brought up to date.
+
+### Security
+- The executable path of a game is validated (full path to a `.exe`, no `..`, no control characters) before it is used as a registry name.
+
+### Fixed
+- Guide labels lost their styling because of a broken CSS rule.
+
 ## [0.5.1] - 2026-10-29
 
 ### Changed

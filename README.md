@@ -1,101 +1,76 @@
+<div align="center">
+
+<img src="src-tauri/icons/128x128.png" width="96" alt="Zanrei logo">
+
 # Zanrei
 
+**Windows optimization where every change can be undone.**
+
 [![Build](https://github.com/sleax-dev/zanrei/actions/workflows/release.yml/badge.svg)](https://github.com/sleax-dev/zanrei/actions/workflows/release.yml)
-[![Release](https://img.shields.io/github/v/release/sleax-dev/zanrei?include_prereleases)](https://github.com/sleax-dev/zanrei/releases)
-![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4)
+[![Release](https://img.shields.io/github/v/release/sleax-dev/zanrei)](https://github.com/sleax-dev/zanrei/releases/latest)
+![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
 
-A Windows optimization app where every change can be undone.
+[Download](https://github.com/sleax-dev/zanrei/releases/latest) · [Changelog](CHANGELOG.md) · [How the settings were chosen](docs/OPTIMIZATION-RESEARCH.md)
 
-Zanrei looks at your PC's hardware, works out what can be improved, and only changes anything after creating a restore point. Whatever it does, you can undo from inside the app. It keeps itself up to date.
+<img src="docs/screenshots/overview.png" width="860" alt="Zanrei overview: hardware, live numbers and the detected Windows">
 
-> **Early development.** Features work as described below, but the app is young: read what a tweak does before you switch it on, and keep Zanrei's restore points around until you are comfortable.
+</div>
 
-## Features
+Zanrei reads your PC's hardware, suggests what is worth changing, and creates a restore point before it touches anything. Each change is journaled, so you can undo a whole session or a single setting from inside the app.
 
-- **Three-step setup.** An animated opening with the logo, then Welcome, a list of what suits your PC (safe settings are already ticked, the rest are offered) and Done. One button applies them, after a restore point is made.
-- **Optimizations you can switch on and off one by one.** About 45 settings in six groups (privacy, performance, gaming, interface, system, cleanup). Each one has a plain-language description and a risk level: **safe**, **moderate** or **advanced**. A switch always reflects what Windows is set to right now, so a setting someone changed earlier, or another tool changed, shows up as on or off. Zanrei looks again whenever you come back to the window. Zanrei marks the ones that suit your hardware as *recommended*.
-- **Restart only when needed.** If a change needs a restart, a sign-out or an Explorer restart, Zanrei says so and offers a button for exactly that, with a countdown you can cancel.
-- **Startup programs.** See everything that starts with Windows (Run keys and Startup folders) and switch entries off and on, the same way Task Manager does. Nothing is uninstalled, and every switch goes through the restore journal.
-- **Games and graphics.** Zanrei reads the launchers' own records to find games from Steam, Epic Games, GOG, Ubisoft Connect, the EA app, the Xbox app, Battle.net, Riot Games, Rockstar and Bethesda, and lets you add any other game. A running game is recognised by the folder its process runs from, not only by file name. Per game you can run it on the high-performance GPU, turn off fullscreen optimizations and start it with higher CPU priority. Graphics card, driver version and driver age are shown with a link to the vendor's driver page.
-- **Game Boost.** While a game is running, Zanrei switches Windows to the high-performance power plan (recreating it on laptops that hide it) and puts your previous plan back when the game closes.
-- **Runs in the background.** The window has a fixed size, a minimize button (to the taskbar) and a close button. Closing sends Zanrei to the system tray once setup is done; it can start with Windows (without a UAC prompt) and both behaviours can be turned off in Settings.
-- **Remove Microsoft Edge** and **remove pre-installed apps** (Candy Crush, Solitaire, TikTok and similar; Xbox, Store, Photos and Calculator are never touched). Both are advanced, **cannot be undone**, and ask you to tick "I understand this cannot be undone" first.
-- **Disk cleanup.** Measures temporary files, crash dumps, Windows update leftovers, browser caches and the Recycle Bin, then deletes only what you tick. Shader caches are deliberately left alone.
-- **Live numbers.** The Overview shows processor, memory, process count and startup programs, so the effect of a change can be seen instead of trusted.
-- **Restore points you can delete.** From the Restore page, one at a time or all at once; the matching Windows restore point goes with it.
-- **Activity log.** Everything Zanrei changes, and everything that goes wrong, with a copy button and a link to the log folder for when you need to ask for help.
-- **Organised by what you want to do.** Privacy, performance, gaming, Windows and cleanup each have their own page; games and graphics sit in their own section.
-- **Automatic updates.** Zanrei checks for a new version at start-up and every few hours, downloads it and installs it. Update packages are cryptographically signed; Zanrei refuses anything that is not. You can switch to manual updates in Settings.
-- **Windows 11 look and feel.** Fluent UI, the Mica backdrop on Windows 11 and a clean dark theme on Windows 10, in the silver of the logo. Loading states are skeletons, not spinners.
-- **10 languages.** English, Türkçe, Español, Deutsch, Français, Português, Русский, 简体中文, 日本語 and العربية (right-to-left supported). The language follows your Windows language and can be changed at any time.
+> Zanrei is young. Read what a setting does before you switch it on, and keep its restore points until you trust it.
 
-## Requirements
+## What it does
 
-| | |
-|---|---|
-| Operating system | Windows 10 or Windows 11, 32-bit or 64-bit |
-| Permissions | Administrator (Zanrei asks when it starts) |
-| WebView2 | Required. The installer downloads it automatically if it is missing. |
+- **About 45 settings in plain language.** Privacy, performance, gaming, interface, system and cleanup, each with a risk level (safe, moderate, advanced). A switch always shows what Windows is set to right now, whoever changed it.
+- **Startup manager.** Turn entries from the Run keys and Startup folders off and on without uninstalling anything.
+- **Games.** Finds games from Steam, Epic, GOG, Ubisoft Connect, the EA app, Xbox, Battle.net, Riot, Rockstar and Bethesda by reading their own records. Per game: high-performance GPU, no fullscreen optimizations, higher CPU priority.
+- **Game Boost.** Switches to the high-performance power plan while a game runs and restores yours afterwards.
+- **Disk cleanup.** Measures first, deletes only what you tick.
+- **Restore.** Undo any snapshot, delete old ones, or open Windows System Restore.
+- **Guide.** The steps no app can do for you (BIOS memory profile, Resizable BAR, drivers, hardware) and how to reinstall Windows cleanly.
+- **Knows your Windows.** Recognizes AtlasOS and ReviOS and adjusts its advice.
+- **Updates itself** from signed releases. Ten languages. No account, no telemetry.
 
-Windows 8.1 and older are not supported.
+<table>
+  <tr>
+    <td><img src="docs/screenshots/performance.png" alt="Performance settings"></td>
+    <td><img src="docs/screenshots/library.png" alt="Game library"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/cleanup.png" alt="Disk cleanup"></td>
+    <td><img src="docs/screenshots/restore.png" alt="Restore points"></td>
+  </tr>
+</table>
 
-## Installation
+## Install
 
-1. Download the latest `Zanrei_<version>_x86-setup.exe` from [Releases](https://github.com/sleax-dev/zanrei/releases).
-2. Run it and follow the installer. The same installer works on 32-bit and 64-bit Windows.
-3. Start Zanrei. The setup wizard opens on first launch.
+1. Download `Zanrei_<version>_x86-setup.exe` from [Releases](https://github.com/sleax-dev/zanrei/releases/latest). The one installer covers 32-bit and 64-bit Windows.
+2. Run it. Zanrei needs administrator rights and installs WebView2 if it is missing.
+3. Follow the three-step setup.
 
-The installer is not code-signed yet, so Windows SmartScreen may show an "unknown publisher" warning. Choose **More info → Run anyway** to continue. After that, updates install themselves.
+The installer is not code-signed yet, so SmartScreen may warn about an unknown publisher: choose **More info → Run anyway**. Updates are signed and verified inside the app.
 
-## Staying safe
+Requires Windows 10 or 11.
 
-Before Zanrei changes anything it creates a **snapshot**: a Windows restore point plus its own record of every setting it touches.
+## How it keeps you safe
 
-- No restore point, no changes. If one cannot be created, Zanrei stops.
-- Undo any snapshot from the **Restore** page. Settings that existed are put back; settings Zanrei added are removed.
-- Switching a single optimization off puts Windows' default back.
-- For a full system rollback, open Windows System Restore from the Restore page.
-- Some things cannot be undone, and Zanrei says so before you do them: removing Edge, removing pre-installed apps, disk cleanup and deleting restore points. They are marked in red, are never part of "apply all" or automatic mode, and the first two need an explicit acknowledgement. Edge is uninstalled and Windows is blocked from putting it back; to get it back later, delete the value `Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}` under `HKLM\SOFTWARE\Policies\Microsoft\EdgeUpdate` and install Edge from microsoft.com.
-- Deleting a restore point on the Restore page leaves the changes in place; they just can no longer be undone from Zanrei.
+- **No restore point, no change.** If one cannot be created, Zanrei stops.
+- **Everything is journaled.** Registry values, scheduled tasks and commands are recorded before they change; undo puts back what existed and removes what Zanrei added.
+- **Irreversible actions say so.** Removing Edge, removing built-in apps, disk cleanup and deleting restore points are marked, never run as part of "apply all" or automatic mode, and the first two ask for an explicit acknowledgement.
+- **Three automation levels.** Manual, Recommended (default) and Automatic. Automatic only applies safe settings and never anything you switched off by hand.
 
-## Automation levels
+Zanrei contacts the internet only to check for updates on GitHub, to download WebView2 if needed, and when you open a link.
 
-Choose during setup and change any time in **Settings**:
+## Build from source
 
-| Level | What Zanrei does |
-|---|---|
-| Manual | Nothing happens unless you choose it. |
-| Recommended *(default)* | Suggests safe improvements; you confirm each one. |
-| Automatic | Applies the safe improvements that suit your PC by itself, always after creating a restore point. Moderate and advanced options are never applied automatically, and anything you switched off by hand stays off. |
+```powershell
+npm install
+npm run tauri dev
+```
 
-## Privacy
+Requirements and the full workflow are in [CONTRIBUTING.md](CONTRIBUTING.md). To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
-Zanrei has no telemetry and no account. It contacts the internet only to check for updates (GitHub), to download WebView2 if it is missing, and when you ask it to reinstall Edge or open a vendor page.
+## Credits
 
-## How the optimizations were chosen
-
-Every setting in the catalog was checked against widely used open-source tools and Microsoft's documentation, and anything whose benefit could not be backed up was left out. The comparison, what Zanrei takes and what it deliberately does not, is in [docs/OPTIMIZATION-RESEARCH.md](docs/OPTIMIZATION-RESEARCH.md).
-
-## Roadmap
-
-- [x] Setup wizard, hardware detection, restore and undo
-- [x] Optimization catalog, Edge removal, cleanup
-- [x] Games, per-game settings, Game Boost, graphics driver overview
-- [x] Background mode and start with Windows
-- [x] Automatic updates
-- [ ] Code signing for the installer
-- [x] Startup program manager, disk cleanup with measuring, restore point deletion
-- [x] Guide for what only the user can do (BIOS, hardware, drivers, clean install), AtlasOS detection
-- [x] Professional game detection (launcher manifests, folder-based process matching)
-- [ ] Vendor-specific graphics driver profiles
-
-## Contributing, security and license
-
-- Want to contribute? Read [CONTRIBUTING.md](CONTRIBUTING.md), which also covers building from source and releasing.
-- Found a security issue? See [SECURITY.md](SECURITY.md).
-- What changed in each version: [CHANGELOG.md](CHANGELOG.md).
-- License: not yet decided.
-
-## Acknowledgements
-
-Registry values and the list of removable apps were cross-checked against the work of widely used open-source projects, all MIT-licensed: [winutil](https://github.com/ChrisTitusTech/winutil), [Win11Debloat](https://github.com/Raphire/Win11Debloat) and [Windows10Debloater](https://github.com/Sycnex/Windows10Debloater). Edge removal follows the method documented by winutil. No code was copied.
+Registry values and the removable-apps list were cross-checked against [winutil](https://github.com/ChrisTitusTech/winutil), [Win11Debloat](https://github.com/Raphire/Win11Debloat) and [Windows10Debloater](https://github.com/Sycnex/Windows10Debloater) (all MIT). No code was copied. The interface font is [Inter](https://rsms.me/inter/) (SIL OFL).

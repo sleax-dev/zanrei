@@ -1,13 +1,14 @@
 import { Button, MessageBar, MessageBarBody, ProgressBar } from "@fluentui/react-components";
 import { ArrowUndo20Regular, CheckmarkCircle16Regular, ChevronDown20Regular, Delete20Regular } from "@fluentui/react-icons";
-import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Collapse } from "../components/Collapse";
 import { Confirm } from "../components/Confirm";
 import { SkeletonRows } from "../components/Skeleton";
 import { api, errorText, type Snapshot } from "../lib/api";
 import { fmtDateTime } from "../lib/format";
 import { useApp } from "../state";
+import { PageHead } from "../components/PageHead";
 
 const GAME_OPTION_TEXT: Record<string, string> = { HighGpu: "gpu", NoFso: "fso", HighPriority: "priority" };
 
@@ -61,17 +62,13 @@ export function Restore() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t("nav.restore")}</h1>
-          <p>{t("pageDesc.restore")}</p>
-        </div>
+      <PageHead title={t("nav.restore")} desc={t("pageDesc.restore")}>
         <div className="btn-row">
           <Button disabled={busy} onClick={() => void run(() => api.createSnapshot("Zanrei"))}>{busy ? t("restore.creating") : t("restore.create")}</Button>
           <Button appearance="subtle" onClick={() => void run(api.openSystemRestore)}>{t("restore.openSystem")}</Button>
           {snapshots.length > 0 && <Button appearance="subtle" icon={<Delete20Regular />} disabled={busy} onClick={() => setDel(snapshots)}>{t("restore.deleteAll")}</Button>}
         </div>
-      </div>
+      </PageHead>
       {busy && <ProgressBar />}
       {error && (
         <MessageBar intent="error">
@@ -102,13 +99,9 @@ export function Restore() {
                   <Button appearance="subtle" icon={<Delete20Regular />} aria-label={t("restore.deleteTitle")} title={t("common.delete")} disabled={busy} onClick={() => setDel([snap])} />
                 </div>
               </div>
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }} className="note-list">
-                    {snap.notes.map((n) => <li key={n}>{noteText(n)}</li>)}
-                  </motion.ul>
-                )}
-              </AnimatePresence>
+              <Collapse open={isOpen}>
+                <ul className="note-list">{snap.notes.map((n) => <li key={n}>{noteText(n)}</li>)}</ul>
+              </Collapse>
             </div>
           );
         })}

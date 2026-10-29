@@ -108,7 +108,7 @@ const en = {
     ram: "Memory in use",
     ramTotal: "/ {{total}}",
     processes: "Running processes",
-    startup: "Programs starting with Windows",
+    startup: "Startup programs",
   },
   optimize: {
     forThisPc: "Recommended for this PC",

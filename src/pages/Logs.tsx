@@ -1,10 +1,12 @@
 import { Button } from "@fluentui/react-components";
-import { Copy20Regular, Delete20Regular, ErrorCircle16Filled, FolderOpen20Regular, Info16Regular, Search20Regular, Warning16Filled } from "@fluentui/react-icons";
+import { Copy20Regular, Delete20Regular, ErrorCircle16Filled, FolderOpen20Regular, Info16Regular, Warning16Filled } from "@fluentui/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, errorText, type LogLevel } from "../lib/api";
 import { fmtClock, fmtDay } from "../lib/format";
 import { useApp } from "../state";
+import { PageHead } from "../components/PageHead";
+import { SearchBox } from "../components/SearchBox";
 
 type Filter = "all" | "Warn" | "Error";
 
@@ -45,17 +47,13 @@ export function Logs() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>{t("nav.logs")}</h1>
-          <p>{t("pageDesc.logs")}</p>
-        </div>
+      <PageHead title={t("nav.logs")} desc={t("pageDesc.logs")}>
         <div className="btn-row">
           <Button icon={<Copy20Regular />} disabled={!shown.length} onClick={() => void copy()}>{t("logs.copy")}</Button>
           <Button icon={<FolderOpen20Regular />} onClick={() => void api.openLogFolder().catch((e) => toast(errorText(e), "error"))}>{t("logs.openFolder")}</Button>
           <Button appearance="subtle" icon={<Delete20Regular />} disabled={!logs.length} onClick={() => void clearLogs()}>{t("logs.clear")}</Button>
         </div>
-      </div>
+      </PageHead>
 
       <div className="logbar">
         <div className="seg" role="radiogroup" aria-label={t("logs.filter")}>
@@ -65,10 +63,7 @@ export function Logs() {
             </button>
           ))}
         </div>
-        <label className="search">
-          <Search20Regular />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("common.search")} aria-label={t("common.search")} />
-        </label>
+        <SearchBox value={query} onChange={setQuery} />
       </div>
 
       {!shown.length && <p className="muted">{logs.length ? t("optimize.empty") : t("logs.empty")}</p>}

@@ -21,6 +21,7 @@ Requirements: Node.js 22, Rust (stable), the `i686-pc-windows-msvc` target, Visu
 npm install
 npm run tauri dev                      # run the app (use a non-elevated terminal)
 npx tsc                                # type-check the UI
+npm run check:i18n                     # every locale key exists and every tweak has text
 cargo test -p zanrei-core              # core tests (also run on non-Windows hosts)
 cargo fmt --all --check                # formatting
 cargo clippy -p zanrei-core -- -D warnings
@@ -35,19 +36,20 @@ The installer is written to `target/i686-pc-windows-msvc/release/bundle/nsis/`. 
 
 ```
 zanrei/
-├── crates/core/        OS-independent core (Rust)
+├── crates/core/          OS-independent core (Rust, zanrei-core)
 │   └── src/
-│       ├── platform/   Everything that touches the OS: the Platform trait,
-│       │               windows.rs (real implementation), other.rs (placeholder elsewhere)
-│       ├── system.rs   Hardware detection and performance class
-│       ├── restore.rs  Snapshot store and registry journal
-│       └── settings.rs User settings (atomic writes)
-├── src-tauri/          Tauri 2 shell: commands, window, Mica, admin manifest, NSIS installer
-├── src/                UI: React 19, TypeScript, Fluent UI v9, Motion
-│   ├── i18n/           i18next setup and locale files
-│   ├── pages/          Setup wizard, overview, restore, settings
-│   └── components/
-└── .github/workflows/  Tests and release build
+│       ├── platform/     Everything that touches the OS: the Platform trait,
+│       │                 windows.rs (real) and other.rs (placeholder elsewhere)
+│       ├── tweaks/       The optimization catalog and how each one is applied and read back
+│       ├── restore.rs    Snapshots and the write-ahead journal
+│       ├── games.rs      Launcher detection and per-game settings
+│       ├── startup.rs, cleanup.rs, system.rs, power.rs, settings.rs
+├── src-tauri/            Tauri 2 shell: commands, window, tray, updater, installer
+├── src/                  UI: React 19, TypeScript, Fluent UI v9, Motion
+│   ├── pages/, components/, i18n/ (en.ts and tr.ts are complete)
+│   └── guide.ts          Data for the Guide page
+├── docs/                 Research notes and the README screenshots
+└── .github/workflows/    Tests and release build
 ```
 
 ## How restore works
@@ -58,7 +60,7 @@ A snapshot is one Windows restore point plus a write-ahead journal of every regi
 - A value's previous state is written to the journal **before** it is changed, so the journal is complete even if the app is killed mid-change.
 - If the same value changes several times in one snapshot, the first (original) value is kept.
 - Rollback replays entries newest-first: values that did not exist are deleted, others are restored. One failing entry does not stop the rest; failures are reported at the end.
-- The journal currently covers registry values (numbers and strings). Services, scheduled tasks and file changes will join it with the tweak catalog.
+- The journal covers registry values, scheduled tasks and commands with a defined revert. Things that cannot be reverted (removing Edge or built-in apps, disk cleanup) are never journaled and are flagged as irreversible in the UI.
 
 ## Platform notes
 
@@ -83,7 +85,7 @@ Add a new `Platform` implementation under `crates/core/src/platform/` and select
 ## Releasing
 
 1. Update `CHANGELOG.md` and set the new version in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `crates/core/Cargo.toml` (then `cargo check` to refresh `Cargo.lock`).
-2. Push a tag such as `v0.3.0`. GitHub Actions tests, builds the installer and publishes the release.
+2. Wait for the CI run on `main` to be green, then push a tag such as `v0.5.1`. GitHub Actions tests, builds the installer and publishes the release.
 3. Installed copies find the release through `latest.json`, which the workflow uploads next to the installer, and verify its signature against the public key in `src-tauri/tauri.conf.json`.
 
 **Updater signing key.** The release workflow signs update packages with the private key stored in the repository secret `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` if it has a password). Without the secret a release still builds but is not offered as an update. Keep a backup of the key: if it is lost, installed copies can no longer verify updates and users must reinstall manually. Never commit it. Generate a new pair with `npx tauri signer generate -w <file>` and put the public half in `plugins.updater.pubkey`.
@@ -94,6 +96,7 @@ Add a new `Platform` implementation under `crates/core/src/platform/` and select
 
 ```powershell
 npx tsc
+npm run check:i18n
 cargo fmt --all --check
 cargo clippy -p zanrei-core -- -D warnings
 cargo test -p zanrei-core

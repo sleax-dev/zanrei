@@ -110,7 +110,7 @@ export default {
     ram: "Kullanılan bellek",
     ramTotal: "/ {{total}}",
     processes: "Çalışan işlem",
-    startup: "Windows ile açılan program",
+    startup: "Başlangıç programı",
   },
   optimize: {
     forThisPc: "Bu bilgisayar için önerilenler",
