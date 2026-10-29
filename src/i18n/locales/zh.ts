@@ -48,6 +48,11 @@ export default {
     "restore": "还原",
     "settings": "设置"
   },
+  "boost": {
+    "label": "游戏加速",
+    "on": "开",
+    "off": "关"
+  },
   "splash": {
     "tagline": "为你调校的 Windows。每项更改都可撤销。"
   },

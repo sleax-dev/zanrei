@@ -3,6 +3,7 @@ const en = {
     next: "Next", back: "Back", finish: "Finish", retry: "Try again", cancel: "Cancel", confirm: "Confirm",
     close: "Close", loading: "Loading…", remove: "Remove", search: "Search", delete: "Delete",
   },
+  boost: { label: "Game Boost", on: "On", off: "Off" },
   splash: { tagline: "Windows, tuned. Every change can be undone.", loading: "Starting Zanrei…" },
   setup: {
     progress: "Step {{current}} of {{total}}",
@@ -70,7 +71,7 @@ const en = {
     logs: "What Zanrei did and anything that went wrong. Share it when you ask for help.",
     settings: "How Zanrei starts, updates and behaves.",
   },
-  titlebar: { minimize: "Minimize", close: "Close", closeToTray: "Close (keeps running in the tray)", boost: "Game Boost: {{game}}" },
+  titlebar: { minimize: "Minimize", close: "Close", closeToTray: "Close (keeps running in the tray)" },
   toast: { applied_one: "{{count}} setting applied", applied_other: "{{count}} settings applied", nothingToApply: "Nothing left to apply", viewLog: "View log" },
   restart: {
     Explorer: "File Explorer needs a restart to finish applying changes.",

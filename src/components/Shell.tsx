@@ -49,7 +49,7 @@ function PageView({ page }: { page: Page }) {
 
 export function Shell() {
   const { t } = useTranslation();
-  const { page, setPage, update } = useApp();
+  const { page, setPage, update, boost, settings } = useApp();
   return (
     <>
       <TitleBar />
@@ -68,6 +68,11 @@ export function Shell() {
               {t("settings.updateTo", { version: update.available.version })}
             </button>
           )}
+          <button className="boost-state" title={boost.active ? boost.game ?? "" : undefined} onClick={() => setPage("library")}>
+            <span className={`dot${settings.game_boost ? " on" : ""}${boost.active ? " live" : ""}`} aria-hidden />
+            <span className="label">{t("boost.label")}</span>
+            <span className="value">{t(settings.game_boost ? "boost.on" : "boost.off")}</span>
+          </button>
           <NavButton page="settings" />
         </nav>
         <main className="content">

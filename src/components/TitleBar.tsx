@@ -7,7 +7,7 @@ import { Logo } from "./Logo";
 /** Windows 11 style caption area: drag region, minimize to the taskbar, close. The window has a fixed size, so there is no maximize. */
 export function TitleBar() {
   const { t } = useTranslation();
-  const { boost, settings } = useApp();
+  const { settings } = useApp();
   // Close keeps Zanrei in the tray only once setup is done and background mode is on (see on_window_event).
   const closeLabel = settings.setup_done && settings.run_in_background ? t("titlebar.closeToTray") : t("titlebar.close");
   return (
@@ -16,7 +16,6 @@ export function TitleBar() {
         <Logo width={22} />
         <span>Zanrei</span>
       </span>
-      {boost.active && <span className="pill accent">{t("titlebar.boost", { game: boost.game ?? "" })}</span>}
       <span className="grow" data-tauri-drag-region />
       <button className="tb-btn" title={t("titlebar.minimize")} aria-label={t("titlebar.minimize")} onClick={() => void api.minimizeWindow()}>
         <Subtract16Regular />

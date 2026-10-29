@@ -48,6 +48,11 @@ export default {
     "restore": "復元",
     "settings": "設定"
   },
+  "boost": {
+    "label": "ゲームブースト",
+    "on": "オン",
+    "off": "オフ"
+  },
   "splash": {
     "tagline": "Windowsを最適化。すべての変更は元に戻せます。"
   },

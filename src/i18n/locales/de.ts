@@ -48,6 +48,11 @@ export default {
     "restore": "Wiederherstellen",
     "settings": "Einstellungen"
   },
+  "boost": {
+    "label": "Spiele-Boost",
+    "on": "An",
+    "off": "Aus"
+  },
   "splash": {
     "tagline": "Windows, optimiert. Jede Änderung lässt sich rückgängig machen."
   },

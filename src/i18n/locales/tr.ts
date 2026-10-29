@@ -5,6 +5,7 @@ export default {
     next: "İleri", back: "Geri", finish: "Bitir", retry: "Tekrar dene", cancel: "Vazgeç", confirm: "Onayla",
     close: "Kapat", loading: "Yükleniyor…", remove: "Kaldır", search: "Ara", delete: "Sil",
   },
+  boost: { label: "Oyun Hızlandırma", on: "Açık", off: "Kapalı" },
   splash: { tagline: "Windows, ayarlanmış. Her değişiklik geri alınabilir.", loading: "Zanrei başlıyor…" },
   setup: {
     progress: "Adım {{current}} / {{total}}",
@@ -72,7 +73,7 @@ export default {
     logs: "Zanrei'nin ne yaptığı ve ters giden her şey. Yardım isterken paylaş.",
     settings: "Zanrei'nin nasıl başladığı, güncellendiği ve davrandığı.",
   },
-  titlebar: { minimize: "Küçült", close: "Kapat", closeToTray: "Kapat (sistem tepsisinde çalışmaya devam eder)", boost: "Oyun Hızlandırma: {{game}}" },
+  titlebar: { minimize: "Küçült", close: "Kapat", closeToTray: "Kapat (sistem tepsisinde çalışmaya devam eder)" },
   toast: { applied_one: "{{count}} ayar uygulandı", applied_other: "{{count}} ayar uygulandı", nothingToApply: "Uygulanacak bir şey kalmadı", viewLog: "Kaydı gör" },
   restart: {
     Explorer: "Değişikliklerin tamamlanması için Dosya Gezgini'nin yeniden başlaması gerekiyor.",

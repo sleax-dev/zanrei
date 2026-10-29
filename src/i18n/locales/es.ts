@@ -48,6 +48,11 @@ export default {
     "restore": "Restaurar",
     "settings": "Ajustes"
   },
+  "boost": {
+    "label": "Impulso de juegos",
+    "on": "Activado",
+    "off": "Desactivado"
+  },
   "splash": {
     "tagline": "Windows, a tu medida. Todo cambio se puede deshacer."
   },

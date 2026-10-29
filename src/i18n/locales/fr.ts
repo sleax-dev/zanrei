@@ -48,6 +48,11 @@ export default {
     "restore": "Restaurer",
     "settings": "Paramètres"
   },
+  "boost": {
+    "label": "Boost de jeu",
+    "on": "Activé",
+    "off": "Désactivé"
+  },
   "splash": {
     "tagline": "Windows, optimisé. Chaque changement est réversible."
   },

@@ -4,6 +4,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-10-29
+
+### Changed
+- Game Boost shows On or Off in the sidebar above Settings, in your language, instead of a badge in the title bar that appeared only while a game ran.
+- Right-click does nothing in the app (no browser menu).
+
+### Fixed
+- Log times in 12-hour languages ("10:29:53 PM") no longer wrap onto a second line.
+
 ## [0.5.2] - 2026-10-29
 
 ### Changed
