@@ -4,6 +4,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-10-30
+
+### Fixed
+- "Remove preinstalled apps" no longer removes every app on its list at once. It now lists the ones installed on this PC and removes only those you tick; apps people often use on purpose (Spotify, Phone Link, Media Player, Teams, TikTok and similar) start unticked. Before, switching it on also removed the Microsoft Store version of Spotify.
+
 ## [0.5.3] - 2026-10-29
 
 ### Changed

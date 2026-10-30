@@ -116,6 +116,13 @@ export interface TweakInfo {
   state: TweakState;
 }
 
+export interface BloatApp {
+  /** Store package name */
+  name: string;
+  /** ticked by default; false for apps people often use on purpose (Spotify, Phone Link…) */
+  suggested: boolean;
+}
+
 export interface GameOptions {
   high_gpu: boolean;
   no_fso: boolean;
@@ -184,6 +191,8 @@ export const api = {
   listTweaks: () => invoke<TweakInfo[]>("list_tweaks"),
   /** `acknowledged` is only for changes that cannot be undone, and only from their confirmation dialog. */
   setTweak: (id: string, enabled: boolean, acknowledged = false) => invoke<TweakInfo>("set_tweak", { id, enabled, acknowledged }),
+  listBloatApps: () => invoke<BloatApp[]>("list_bloat_apps"),
+  removeBloatApps: (apps: string[]) => invoke<TweakInfo>("remove_bloat_apps", { apps }),
   applyRecommended: (includeModerate: boolean) => invoke<ApplyReport>("apply_recommended", { includeModerate }),
   pendingRestart: () => invoke<Restart>("pending_restart"),
   restartNow: (seconds: number) => invoke<void>("restart_now", { seconds }),

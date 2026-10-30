@@ -12,7 +12,7 @@ use crate::system::Tier;
 use crate::{Error, Result, power};
 use serde::Serialize;
 
-pub use catalog::{BLOAT_APPS, catalog};
+pub use catalog::{BLOAT_APPS, BLOAT_APPS_IN_USE, catalog};
 
 #[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Risk {
@@ -201,10 +201,29 @@ pub fn apply(store: &Store, p: &dyn Platform, sid: &str, t: &Tweak, build: u32) 
                     p.remove_edge()?;
                 }
             }
-            Action::RemoveBloatApps => p.remove_apps(BLOAT_APPS)?,
+            // The person picks the apps (remove_bloat_apps); switching the tweak on never removes the whole list.
+            Action::RemoveBloatApps => return Err(Error::Msg("choose the apps to remove first".into())),
         }
     }
     Ok(())
+}
+
+/// Removes the apps the person ticked. Only names from `BLOAT_APPS` are accepted, so a caller cannot widen the list.
+pub fn remove_bloat_apps(p: &dyn Platform, chosen: &[String]) -> Result<()> {
+    if chosen.is_empty() {
+        return Err(Error::Msg("no apps chosen".into()));
+    }
+    let names = chosen
+        .iter()
+        .map(|c| {
+            BLOAT_APPS
+                .iter()
+                .find(|b| **b == c.as_str())
+                .copied()
+                .ok_or_else(|| Error::Msg(format!("{c} is not on the list of removable apps")))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    p.remove_apps(&names)
 }
 
 /// Puts the stock Windows values back.
@@ -388,9 +407,26 @@ mod tests {
         *p.apps.lock().unwrap() = vec!["Microsoft.BingNews".into()];
         let mut b = tweak(vec![Action::RemoveBloatApps]);
         b.reversible = false;
-        apply(&store, &p, &sid, &b, 0).unwrap();
+        assert!(
+            apply(&store, &p, &sid, &b, 0).is_err(),
+            "switching it on must not remove the whole list"
+        );
+        remove_bloat_apps(&p, &["Microsoft.BingNews".into()]).unwrap();
         assert_eq!(state(&p, &b, 0), State::Applied);
         assert!(revert(&p, &b).is_err());
+    }
+
+    #[test]
+    fn remove_bloat_apps_takes_only_what_was_chosen() {
+        let p = Fake::default();
+        *p.apps.lock().unwrap() = vec!["SpotifyAB.SpotifyMusic".into(), "Microsoft.BingNews".into()];
+        remove_bloat_apps(&p, &["Microsoft.BingNews".into()]).unwrap();
+        assert_eq!(*p.apps.lock().unwrap(), vec!["SpotifyAB.SpotifyMusic".to_string()]);
+        // nothing chosen, or a name outside the list: refused, nothing removed
+        assert!(remove_bloat_apps(&p, &[]).is_err());
+        assert!(remove_bloat_apps(&p, &["SpotifyAB.SpotifyMusic".into(), "Some.Other".into()]).is_err());
+        assert_eq!(p.apps.lock().unwrap().len(), 1);
+        assert!(BLOAT_APPS_IN_USE.iter().all(|a| BLOAT_APPS.contains(a)));
     }
 
     #[test]

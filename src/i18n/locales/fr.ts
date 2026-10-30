@@ -61,6 +61,13 @@ export default {
     "close": "Fermer",
     "closeToTray": "Fermer (reste actif en arrière-plan)"
   },
+  "bloat": {
+    "pick": "Seules les applis cochées sont supprimées. Celles que beaucoup utilisent restent décochées.",
+    "mayUse": "vous l’utilisez peut-être",
+    "none": "Aucune des applis supprimables n’est installée.",
+    "remove_one": "Supprimer {{count}} appli",
+    "remove_other": "Supprimer {{count}} applis"
+  },
   "overview": {
     "title": "Ton PC",
     "cpu": "Processeur",

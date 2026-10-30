@@ -175,6 +175,33 @@ impl Inner {
         Ok(tweaks::info(&*self.platform, t, build, tier))
     }
 
+    /// The removable apps that are actually installed; `suggested` = ticked by default in the picker.
+    fn list_bloat_apps(&self) -> CoreResult<Vec<BloatApp>> {
+        Ok(self
+            .platform
+            .installed_apps(tweaks::BLOAT_APPS)?
+            .into_iter()
+            .map(|name| BloatApp {
+                suggested: !tweaks::BLOAT_APPS_IN_USE.contains(&name.as_str()),
+                name,
+            })
+            .collect())
+    }
+
+    fn remove_bloat_apps(&self, apps: &[String]) -> CoreResult<TweakInfo> {
+        let t = tweaks::find("bloat_apps").ok_or_else(|| Error::Msg("unknown tweak".into()))?;
+        {
+            let _guard = lock(&self.change_lock);
+            tweaks::remove_bloat_apps(&*self.platform, apps)?;
+        }
+        self.log(
+            Level::Warn,
+            "tweaks",
+            format!("Removed apps (cannot be undone): {}", apps.join(", ")),
+        );
+        Ok(tweaks::info(&*self.platform, t, system::os_build(), self.system().tier))
+    }
+
     /// Applies the tweaks that suit this PC, skipping anything the user switched off by hand.
     fn apply_recommended(&self, include_moderate: bool) -> ApplyReport {
         let (build, tier) = (system::os_build(), self.system().tier);
@@ -225,6 +252,12 @@ impl Inner {
         *lock(&self.games) = found.clone();
         found
     }
+}
+
+#[derive(Serialize)]
+struct BloatApp {
+    name: String,
+    suggested: bool,
 }
 
 #[derive(Serialize, Default)]
@@ -394,6 +427,16 @@ async fn set_tweak(s: State<'_, AppState>, id: String, enabled: bool, acknowledg
         i.set_tweak(&id, enabled, acknowledged.unwrap_or(false))
     })
     .await
+}
+
+#[tauri::command]
+async fn list_bloat_apps(s: State<'_, AppState>) -> Res<Vec<BloatApp>> {
+    with(&s, "list_bloat_apps", |i| i.list_bloat_apps()).await
+}
+
+#[tauri::command]
+async fn remove_bloat_apps(s: State<'_, AppState>, apps: Vec<String>) -> Res<TweakInfo> {
+    with(&s, "remove_bloat_apps", move |i| i.remove_bloat_apps(&apps)).await
 }
 
 #[tauri::command]
@@ -1118,6 +1161,8 @@ pub fn run() {
             open_system_restore,
             list_tweaks,
             set_tweak,
+            list_bloat_apps,
+            remove_bloat_apps,
             apply_recommended,
             scan_cleanup,
             run_cleanup,

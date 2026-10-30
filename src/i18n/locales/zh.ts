@@ -61,6 +61,13 @@ export default {
     "close": "关闭",
     "closeToTray": "关闭(在后台继续运行)"
   },
+  "bloat": {
+    "pick": "只会删除你勾选的应用。常用的应用默认不勾选。",
+    "mayUse": "你可能在用",
+    "none": "没有安装可删除的应用。",
+    "remove_one": "删除 {{count}} 个应用",
+    "remove_other": "删除 {{count}} 个应用"
+  },
   "overview": {
     "title": "你的电脑",
     "cpu": "处理器",

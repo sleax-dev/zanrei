@@ -111,6 +111,13 @@ const en = {
     processes: "Running processes",
     startup: "Startup programs",
   },
+  bloat: {
+    pick: "Only the apps you tick are removed. Apps people often use are left unticked.",
+    mayUse: "you may use this",
+    none: "None of the removable apps are installed.",
+    remove_one: "Remove {{count}} app",
+    remove_other: "Remove {{count}} apps",
+  },
   optimize: {
     forThisPc: "Recommended for this PC",
     more: "More options",
@@ -510,7 +517,7 @@ const en = {
     onedrive_policy: { name: "Stop OneDrive syncing files", desc: "Turns off OneDrive file sync by policy without uninstalling it." },
     edge_debloat: { name: "Remove Edge nags and ads", desc: "Hides Edge's first-run screen, shopping assistant, recommendations and rewards. Edge may show a 'managed by your organization' notice." },
     remove_edge: { name: "Remove Microsoft Edge", desc: "Uninstalls the Edge browser and blocks Windows from installing it again. The WebView2 runtime that apps like Zanrei need is kept. This cannot be undone from Zanrei. Make sure you have another browser first." },
-    bloat_apps: { name: "Remove preinstalled apps", desc: "Uninstalls promotional and rarely used Store apps (Clipchamp, News, Weather, Solitaire, TikTok and similar). Xbox, Store, Photos and Calculator are kept. This cannot be undone from Zanrei; reinstall what you miss from the Microsoft Store." },
+    bloat_apps: { name: "Remove preinstalled apps", desc: "Uninstalls the promotional Store apps you tick in a list (News, Weather, Solitaire, Candy Crush and similar). Apps people often use, such as Spotify or Phone Link, start unticked. Xbox, Store, Photos and Calculator are never listed. This cannot be undone from Zanrei; reinstall what you miss from the Microsoft Store." },
   },
 };
 

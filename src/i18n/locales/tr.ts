@@ -113,6 +113,13 @@ export default {
     processes: "Çalışan işlem",
     startup: "Başlangıç programı",
   },
+  bloat: {
+    pick: "Yalnızca işaretlediğin uygulamalar kaldırılır. Sık kullanılan uygulamalar işaretsiz gelir.",
+    mayUse: "kullanıyor olabilirsin",
+    none: "Kaldırılabilecek uygulamalardan hiçbiri yüklü değil.",
+    remove_one: "{{count}} uygulamayı kaldır",
+    remove_other: "{{count}} uygulamayı kaldır",
+  },
   optimize: {
     forThisPc: "Bu bilgisayar için önerilenler",
     more: "Diğer seçenekler",
@@ -512,6 +519,6 @@ export default {
     onedrive_policy: { name: "OneDrive'ın dosya eşitlemesini durdur", desc: "OneDrive dosya eşitlemesini kaldırmadan, ilke ile kapatır." },
     edge_debloat: { name: "Edge'in uyarı ve reklamlarını kaldır", desc: "Edge'in ilk çalıştırma ekranını, alışveriş asistanını, önerilerini ve ödüllerini gizler. Edge 'kuruluşunuz tarafından yönetiliyor' notu gösterebilir." },
     remove_edge: { name: "Microsoft Edge'i kaldır", desc: "Edge tarayıcısını kaldırır ve Windows'un onu yeniden yüklemesini engeller. Zanrei gibi uygulamaların ihtiyaç duyduğu WebView2 çalışma zamanı korunur. Bu işlem Zanrei'den geri alınamaz. Önce başka bir tarayıcın olduğundan emin ol." },
-    bloat_apps: { name: "Önceden yüklü uygulamaları kaldır", desc: "Tanıtım amaçlı ve nadiren kullanılan Mağaza uygulamalarını kaldırır (Clipchamp, Haberler, Hava Durumu, Solitaire, TikTok vb.). Xbox, Mağaza, Fotoğraflar ve Hesap Makinesi korunur. Bu işlem Zanrei'den geri alınamaz; özlediklerini Microsoft Store'dan yeniden yükle." },
+    bloat_apps: { name: "Önceden yüklü uygulamaları kaldır", desc: "Listeden işaretlediğin tanıtım amaçlı Mağaza uygulamalarını kaldırır (Haberler, Hava Durumu, Solitaire, Candy Crush vb.). Spotify veya Telefon Bağlantısı gibi sık kullanılan uygulamalar işaretsiz gelir. Xbox, Mağaza, Fotoğraflar ve Hesap Makinesi listede hiç yer almaz. Bu işlem Zanrei'den geri alınamaz; özlediklerini Microsoft Store'dan yeniden yükle." },
   },
 } satisfies Locale;

@@ -61,6 +61,13 @@ export default {
     "close": "Fechar",
     "closeToTray": "Fechar (continua em segundo plano)"
   },
+  "bloat": {
+    "pick": "Só as apps que marcares são removidas. As que muita gente usa ficam desmarcadas.",
+    "mayUse": "talvez a uses",
+    "none": "Nenhuma das apps removíveis está instalada.",
+    "remove_one": "Remover {{count}} app",
+    "remove_other": "Remover {{count}} apps"
+  },
   "overview": {
     "title": "Seu PC",
     "cpu": "Processador",

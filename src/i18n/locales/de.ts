@@ -61,6 +61,13 @@ export default {
     "close": "Schließen",
     "closeToTray": "Schließen (läuft im Hintergrund weiter)"
   },
+  "bloat": {
+    "pick": "Nur die Apps, die du anhakst, werden entfernt. Apps, die viele bewusst nutzen, sind nicht angehakt.",
+    "mayUse": "nutzt du vielleicht",
+    "none": "Keine der entfernbaren Apps ist installiert.",
+    "remove_one": "{{count}} App entfernen",
+    "remove_other": "{{count}} Apps entfernen"
+  },
   "overview": {
     "title": "Dein PC",
     "cpu": "Prozessor",

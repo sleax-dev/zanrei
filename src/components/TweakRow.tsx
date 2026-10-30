@@ -4,6 +4,7 @@ import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TweakInfo } from "../lib/api";
 import { useApp } from "../state";
+import { BloatPicker } from "./BloatPicker";
 import { Confirm } from "./Confirm";
 
 type Flag = { tone: "" | "warn" | "bad"; icon: ReactNode; text: string };
@@ -23,6 +24,7 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
   const { t } = useTranslation();
   const { busy, setTweak } = useApp();
   const [ask, setAsk] = useState(false);
+  const [pick, setPick] = useState(false);
   const working = busy.has(tweak.id);
   const on = tweak.state === "Applied";
   const unavailable = tweak.state === "Unavailable";
@@ -30,7 +32,8 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
   const flags = flagsFor(tweak, t);
 
   const toggle = (enable: boolean) => {
-    if (enable && (tweak.risk !== "Safe" || !tweak.reversible)) setAsk(true);
+    if (enable && tweak.id === "bloat_apps") setPick(true);
+    else if (enable && (tweak.risk !== "Safe" || !tweak.reversible)) setAsk(true);
     else void setTweak(tweak.id, enable);
   };
 
@@ -62,6 +65,7 @@ export function TweakRow({ tweak }: { tweak: TweakInfo }) {
         <p>{t(`tweaks.${tweak.id}.desc`)}</p>
         {tweak.reversible ? <p>{t(`optimize.confirm.${tweak.risk}`)}</p> : <p><b>{t("optimize.confirm.irreversible")}</b></p>}
       </Confirm>
+      {tweak.id === "bloat_apps" && <BloatPicker open={pick} onClose={() => setPick(false)} />}
     </div>
   );
 }

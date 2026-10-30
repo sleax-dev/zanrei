@@ -41,6 +41,22 @@ pub const BLOAT_APPS: &[&str] = &[
     "Facebook.Facebook",
 ];
 
+/// Apps on that list that people often install and use on purpose: the picker offers them unticked.
+pub const BLOAT_APPS_IN_USE: &[&str] = &[
+    "Clipchamp.Clipchamp",
+    "Microsoft.PowerAutomateDesktop",
+    "Microsoft.SkypeApp",
+    "Microsoft.Todos",
+    "Microsoft.YourPhone",
+    "Microsoft.ZuneMusic",
+    "Microsoft.ZuneVideo",
+    "MicrosoftTeams",
+    "SpotifyAB.SpotifyMusic",
+    "Disney.37853FC22B2CE",
+    "BytedancePte.Ltd.TikTok",
+    "Facebook.Facebook",
+];
+
 fn dword(h: crate::platform::Hive, path: &str, name: &str, apply: u32, revert: Option<u32>) -> Action {
     Action::Reg {
         key: RegKey::new(h, path, name),
