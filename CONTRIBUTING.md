@@ -15,7 +15,7 @@ Before starting on a larger change, please open an issue so we can agree on the 
 
 ## Development setup
 
-Requirements: Node.js 22, Rust (stable), the `i686-pc-windows-msvc` target, Visual Studio Build Tools (C++), WebView2.
+Requirements: the current Node.js LTS, Rust (stable), the `i686-pc-windows-msvc` target, Visual Studio Build Tools (C++), WebView2.
 
 ```powershell
 npm install

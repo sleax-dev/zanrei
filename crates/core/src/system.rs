@@ -109,36 +109,40 @@ pub fn tier(ram_bytes: u64, logical_cores: usize, has_ssd: bool, gpus: &[Gpu]) -
 
 /// Windows build number (e.g. 22631), 0 when unknown.
 pub fn os_build() -> u32 {
-    System::kernel_version().and_then(|v| v.parse().ok()).unwrap_or(0)
+    System::kernel_version().ok().and_then(|v| v.parse().ok()).unwrap_or(0)
 }
 
 pub fn detect(platform: &dyn Platform) -> SystemInfo {
-    let mut sys = System::new();
-    sys.refresh_memory();
-    sys.refresh_cpu_all();
-    let cpu_name = sys
-        .cpus()
-        .first()
-        .map(|c| c.brand().trim().to_string())
-        .unwrap_or_default();
-    let logical_cores = sys.cpus().len();
+    // sysinfo can't fail on Windows; if it ever does, report unknown hardware instead of failing setup.
+    let sys = System::new().ok().map(|mut sys| {
+        sys.refresh_memory();
+        sys.refresh_cpu_all();
+        sys
+    });
+    let cpus = sys.as_ref().map(|s| s.cpus()).unwrap_or_default();
+    let cpu_name = cpus.first().map(|c| c.brand().trim().to_string()).unwrap_or_default();
+    let logical_cores = cpus.len();
     let physical_cores = System::physical_core_count().unwrap_or(logical_cores);
+    let ram_bytes = sys.as_ref().map_or(0, |s| s.total_memory());
 
     let disks: Vec<DiskInfo> = Disks::new_with_refreshed_list()
-        .iter()
-        .filter(|d| !d.is_removable())
-        .map(|d| DiskInfo {
-            mount: d.mount_point().to_string_lossy().into_owned(),
-            kind: match d.kind() {
-                DiskKind::SSD => "SSD",
-                DiskKind::HDD => "HDD",
-                _ => "Unknown",
-            }
-            .into(),
-            total_bytes: d.total_space(),
-            free_bytes: d.available_space(),
+        .map(|list| {
+            list.iter()
+                .filter(|d| !d.is_removable())
+                .map(|d| DiskInfo {
+                    mount: d.mount_point().to_string_lossy().into_owned(),
+                    kind: match d.kind() {
+                        DiskKind::SSD => "SSD",
+                        DiskKind::HDD => "HDD",
+                        _ => "Unknown",
+                    }
+                    .into(),
+                    total_bytes: d.total_space(),
+                    free_bytes: d.available_space(),
+                })
+                .collect()
         })
-        .collect();
+        .unwrap_or_default();
 
     // A failed GPU query must not block setup: report "no GPU found" and let the UI say so.
     let gpus = platform.gpus().unwrap_or_default();
@@ -156,8 +160,8 @@ pub fn detect(platform: &dyn Platform) -> SystemInfo {
         cpu_name,
         physical_cores,
         logical_cores,
-        ram_bytes: sys.total_memory(),
-        tier: tier(sys.total_memory(), logical_cores, has_ssd, &gpus),
+        ram_bytes,
+        tier: tier(ram_bytes, logical_cores, has_ssd, &gpus),
         gpus,
         disks,
     }

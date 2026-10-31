@@ -51,7 +51,7 @@ struct Inner {
     system: Mutex<Option<SystemInfo>>,
     games: Mutex<Vec<Game>>,
     /// Kept between calls: CPU usage is the change since the previous refresh.
-    stats: Mutex<System>,
+    stats: Mutex<Option<System>>,
     boost: Mutex<BoostStatus>,
     tray: Mutex<Option<TrayIcon>>,
     log: Logger,
@@ -244,9 +244,8 @@ impl Inner {
 
     fn refresh_games(&self) -> Vec<Game> {
         let roots: Vec<PathBuf> = Disks::new_with_refreshed_list()
-            .iter()
-            .map(|d| d.mount_point().to_path_buf())
-            .collect();
+            .map(|list| list.iter().map(|d| d.mount_point().to_path_buf()).collect())
+            .unwrap_or_default();
         let custom = lock(&self.settings).custom_games.clone();
         let found = games::detect(&*self.platform, &roots, &custom);
         *lock(&self.games) = found.clone();
@@ -508,19 +507,20 @@ struct LiveStats {
 async fn live_stats(s: State<'_, AppState>) -> Res<LiveStats> {
     let s = s.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let mut sys = s.0.stats.lock().unwrap_or_else(|e| e.into_inner());
+        let mut stats = s.0.stats.lock().unwrap_or_else(|e| e.into_inner());
+        let sys = stats.as_mut().ok_or("System statistics are unavailable")?;
         sys.refresh_cpu_usage();
         sys.refresh_memory();
         sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
-        LiveStats {
+        Ok(LiveStats {
             cpu_percent: sys.global_cpu_usage(),
             ram_used: sys.used_memory(),
             ram_total: sys.total_memory(),
             processes: sys.processes().len(),
-        }
+        })
     })
     .await
-    .map_err(|e| e.to_string())
+    .map_err(|e| e.to_string())?
 }
 
 // ---- restart
@@ -1016,7 +1016,14 @@ fn restore_boost(s: &Inner) {
 
 fn spawn_boost_watcher(app: AppHandle, state: AppState) {
     std::thread::spawn(move || {
-        let mut sys = System::new();
+        let Ok(mut sys) = System::new() else {
+            state.0.log(
+                Level::Warn,
+                "boost",
+                "Game Boost is off: the process list is unavailable",
+            );
+            return;
+        };
         let mut watch = games::watch(&[]);
         let mut scanned: Option<Instant> = None;
         let mut failed: Option<String> = None;
@@ -1085,7 +1092,7 @@ pub fn run() {
                 pending_restart: Mutex::new(Restart::None),
                 system: Mutex::new(None),
                 games: Mutex::new(vec![]),
-                stats: Mutex::new(System::new()),
+                stats: Mutex::new(System::new().ok()),
                 boost: Mutex::new(BoostStatus::default()),
                 tray: Mutex::new(None),
                 log: Logger::new(log_dir),
