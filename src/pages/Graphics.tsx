@@ -3,8 +3,8 @@ import { Open20Regular } from "@fluentui/react-icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { SkeletonFacts } from "../components/Skeleton";
-import { gb, type Gpu } from "../lib/api";
-import { fmtDay } from "../lib/format";
+import { type Gpu } from "../lib/api";
+import { fmtDay, gb } from "../lib/format";
 import { useApp } from "../state";
 import { PageHead } from "../components/PageHead";
 

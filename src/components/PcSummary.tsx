@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { gb, type SystemInfo } from "../lib/api";
+import { type SystemInfo } from "../lib/api";
+import { gb } from "../lib/format";
 
 /** One plain definition list. A spec sheet reads like one; it does not need a tile per fact. */
 export function PcSummary({ info }: { info: SystemInfo }) {

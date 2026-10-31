@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, gb, type LiveStats } from "../lib/api";
+import { api, type LiveStats } from "../lib/api";
+import { gb } from "../lib/format";
 import { useApp } from "../state";
 import { Skeleton } from "./Skeleton";
 

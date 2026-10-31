@@ -49,7 +49,6 @@ struct Inner {
     session: Mutex<Option<(String, u64)>>,
     pending_restart: Mutex<Restart>,
     system: Mutex<Option<SystemInfo>>,
-    games: Mutex<Vec<Game>>,
     /// Kept between calls: CPU usage is the change since the previous refresh.
     stats: Mutex<Option<System>>,
     boost: Mutex<BoostStatus>,
@@ -67,6 +66,10 @@ struct AppState(Arc<Inner>);
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+fn find_tweak(id: &str) -> CoreResult<&'static tweaks::Tweak> {
+    tweaks::find(id).ok_or_else(|| Error::Msg(format!("unknown tweak: {id}")))
 }
 
 fn now_unix() -> u64 {
@@ -116,6 +119,14 @@ impl Inner {
         Ok(s.clone())
     }
 
+    /// A rolled-back or deleted snapshot takes no new entries: the next change has to start a fresh session.
+    fn end_session_if(&self, gone: impl Fn(&str) -> bool) {
+        let mut session = lock(&self.session);
+        if session.as_ref().is_some_and(|(sid, _)| gone(sid)) {
+            *session = None;
+        }
+    }
+
     fn note_restart(&self, kind: Restart) {
         let mut p = lock(&self.pending_restart);
         *p = (*p).max(kind);
@@ -136,7 +147,7 @@ impl Inner {
     /// `acknowledged` is the user's explicit "I understand this cannot be undone"; the UI only sends it from the
     /// confirmation dialog, so nothing irreversible can be switched on by a stray call or by "apply all".
     fn set_tweak(&self, id: &str, enabled: bool, acknowledged: bool) -> CoreResult<TweakInfo> {
-        let t = tweaks::find(id).ok_or_else(|| Error::Msg("unknown tweak".into()))?;
+        let t = find_tweak(id)?;
         if enabled && !t.reversible && !acknowledged {
             return Err(Error::Msg(
                 "this change cannot be undone and needs explicit confirmation".into(),
@@ -189,7 +200,7 @@ impl Inner {
     }
 
     fn remove_bloat_apps(&self, apps: &[String]) -> CoreResult<TweakInfo> {
-        let t = tweaks::find("bloat_apps").ok_or_else(|| Error::Msg("unknown tweak".into()))?;
+        let t = find_tweak("bloat_apps")?;
         {
             let _guard = lock(&self.change_lock);
             tweaks::remove_bloat_apps(&*self.platform, apps)?;
@@ -247,9 +258,7 @@ impl Inner {
             .map(|list| list.iter().map(|d| d.mount_point().to_path_buf()).collect())
             .unwrap_or_default();
         let custom = lock(&self.settings).custom_games.clone();
-        let found = games::detect(&*self.platform, &roots, &custom);
-        *lock(&self.games) = found.clone();
-        found
+        games::detect(&*self.platform, &roots, &custom)
     }
 }
 
@@ -361,12 +370,7 @@ async fn rollback_snapshot(s: State<'_, AppState>, id: String) -> Res<()> {
     with(&s, "rollback_snapshot", move |i| {
         let _guard = lock(&i.change_lock);
         i.store.rollback(&*i.platform, &id)?;
-        // A rolled-back snapshot refuses new entries; the next change has to start a fresh one.
-        let mut session = lock(&i.session);
-        if session.as_ref().is_some_and(|(sid, _)| *sid == id) {
-            *session = None;
-        }
-        drop(session);
+        i.end_session_if(|sid| sid == id);
         i.log(Level::Info, "restore", format!("Rolled back restore point {id}"));
         // Whatever was undone may need the same follow-up as when it was applied.
         i.note_restart(Restart::Reboot);
@@ -389,12 +393,7 @@ async fn delete_snapshots(s: State<'_, AppState>, ids: Vec<String>) -> Res<Delet
     with(&s, "delete_snapshots", move |i| {
         let _guard = lock(&i.change_lock);
         let (deleted, windows_points_kept) = i.store.delete(&*i.platform, &ids)?;
-        // The running session writes into one snapshot; if that one is gone, the next change must start a new one.
-        let mut session = lock(&i.session);
-        if session.as_ref().is_some_and(|(sid, _)| ids.contains(sid)) {
-            *session = None;
-        }
-        drop(session);
+        i.end_session_if(|sid| ids.iter().any(|x| x == sid));
         i.log(
             Level::Info,
             "restore",
@@ -825,32 +824,19 @@ async fn check_update_inner(app: &AppHandle, s: &Inner) -> UpdateStatus {
         Ok(updater) => updater.check().await,
         Err(e) => Err(e),
     };
-    match found {
-        Ok(update) => {
-            match &update {
-                Some(u) => s.log(Level::Info, "updater", format!("Version {} is available", u.version)),
-                None => s.log(Level::Info, "updater", "Checked for updates: up to date"),
-            }
-            let info = update.as_ref().map(|u| UpdateInfo {
-                version: u.version.clone(),
-                notes: u.body.clone(),
-                date: u.date.map(|d| d.to_string()),
-            });
-            *lock(&s.pending_update) = update;
-            set_update(app, s, |u| {
-                u.available = info;
-                u.checking = false;
-                u.last_checked_unix = Some(now_unix());
-            });
+    let update = match found {
+        Ok(Some(u)) => {
+            s.log(Level::Info, "updater", format!("Version {} is available", u.version));
+            Some(u)
+        }
+        Ok(None) => {
+            s.log(Level::Info, "updater", "Checked for updates: up to date");
+            None
         }
         // No latest.json published yet (a release built without the signing key): nothing to offer, not a failure.
         Err(tauri_plugin_updater::Error::ReleaseNotFound) => {
             s.log(Level::Info, "updater", "No update information has been published yet");
-            set_update(app, s, |u| {
-                u.available = None;
-                u.checking = false;
-                u.last_checked_unix = Some(now_unix());
-            });
+            None
         }
         Err(e) => {
             s.log(Level::Warn, "updater", format!("Update check failed: {e}"));
@@ -858,8 +844,20 @@ async fn check_update_inner(app: &AppHandle, s: &Inner) -> UpdateStatus {
                 u.checking = false;
                 u.error = Some(e.to_string());
             });
+            return lock(&s.update).clone();
         }
-    }
+    };
+    let info = update.as_ref().map(|u| UpdateInfo {
+        version: u.version.clone(),
+        notes: u.body.clone(),
+        date: u.date.map(|d| d.to_string()),
+    });
+    *lock(&s.pending_update) = update;
+    set_update(app, s, |u| {
+        u.available = info;
+        u.checking = false;
+        u.last_checked_unix = Some(now_unix());
+    });
     lock(&s.update).clone()
 }
 
@@ -1091,7 +1089,6 @@ pub fn run() {
                 session: Mutex::new(None),
                 pending_restart: Mutex::new(Restart::None),
                 system: Mutex::new(None),
-                games: Mutex::new(vec![]),
                 stats: Mutex::new(System::new().ok()),
                 boost: Mutex::new(BoostStatus::default()),
                 tray: Mutex::new(None),

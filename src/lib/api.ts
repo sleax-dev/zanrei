@@ -1,14 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export type Mode = "Manual" | "Recommended" | "Auto";
-export type Tier = "Legacy" | "Mainstream" | "High";
+type Tier = "Legacy" | "Mainstream" | "High";
 export type Category = "Privacy" | "Performance" | "Gaming" | "Interface" | "System" | "Cleanup";
-export type Risk = "Safe" | "Moderate" | "Advanced";
+type Risk = "Safe" | "Moderate" | "Advanced";
 export type Restart = "None" | "Explorer" | "SignOut" | "Reboot";
-export type TweakState = "Applied" | "NotApplied" | "Partial" | "Unavailable";
+type TweakState = "Applied" | "NotApplied" | "Partial" | "Unavailable";
 export type GameOption = "HighGpu" | "NoFso" | "HighPriority";
 
-export interface CustomGame {
+interface CustomGame {
   name: string;
   exe: string;
 }
@@ -36,14 +36,14 @@ export interface Gpu {
   vram_bytes: number | null;
 }
 
-export interface DiskInfo {
+interface DiskInfo {
   mount: string;
   kind: string;
   total_bytes: number;
   free_bytes: number;
 }
 
-export interface Flavor {
+interface Flavor {
   id: "atlas" | "revios";
   name: string;
   version: string | null;
@@ -129,7 +129,7 @@ export interface GameOptions {
   high_priority: boolean;
 }
 
-export interface Game {
+interface Game {
   id: string;
   name: string;
   launcher: string;
@@ -229,10 +229,6 @@ export const DEFAULT_SETTINGS: Settings = {
   user_disabled: [],
   boost_restore_scheme: null,
 };
-
-export const CATEGORIES: Category[] = ["Privacy", "Performance", "Gaming", "Interface", "System", "Cleanup"];
-
-export const gb = (bytes: number) => `${(bytes / 2 ** 30).toFixed(bytes < 10 * 2 ** 30 ? 1 : 0)} GB`;
 
 export function errorText(e: unknown): string {
   return typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);

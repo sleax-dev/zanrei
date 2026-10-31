@@ -3,7 +3,7 @@ import { type BrandVariants, createDarkTheme, type Theme } from "@fluentui/react
 // Brand colours live here (single source of truth), taken from the logo: brushed silver on black.
 // Silver is the accent everywhere an interface would normally use blue: buttons, switches, selection,
 // focus, links. Surfaces are near-black with a faint cool cast. Green/amber/red stay as status colours only.
-export const ACCENT = "#D4D8DF";
+const ACCENT = "#D4D8DF";
 const ACCENT_HOVER = "#E6E9ED";
 const ACCENT_PRESSED = "#B9BEC8";
 const ACCENT_TEXT = "#E3E6EB"; // accent text on dark surfaces
@@ -14,7 +14,7 @@ const brand: BrandVariants = {
 };
 
 // Inter is the closest open face to Apple's SF Pro (SF itself may not be redistributed). It ships with the app, so it needs no network.
-export const FONT = '"Inter Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif';
+const FONT = '"Inter Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif';
 
 const base = createDarkTheme(brand);
 

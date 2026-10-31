@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { gb, type SystemInfo } from "../lib/api";
+import { type SystemInfo } from "../lib/api";
+import { gb } from "../lib/format";
 
 /** What is inside the PC as one list. Disks show how full they are, because a nearly full system drive is a real cause of slowness. */
 export function HardwareList({ info }: { info: SystemInfo }) {

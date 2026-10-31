@@ -119,11 +119,11 @@ pub fn detect(platform: &dyn Platform) -> SystemInfo {
         sys.refresh_cpu_all();
         sys
     });
-    let cpus = sys.as_ref().map(|s| s.cpus()).unwrap_or_default();
+    let cpus = sys.as_ref().map(System::cpus).unwrap_or_default();
     let cpu_name = cpus.first().map(|c| c.brand().trim().to_string()).unwrap_or_default();
     let logical_cores = cpus.len();
     let physical_cores = System::physical_core_count().unwrap_or(logical_cores);
-    let ram_bytes = sys.as_ref().map_or(0, |s| s.total_memory());
+    let ram_bytes = sys.as_ref().map_or(0, System::total_memory);
 
     let disks: Vec<DiskInfo> = Disks::new_with_refreshed_list()
         .map(|list| {

@@ -1,8 +1,8 @@
 // The Guide page's content as data. Text lives in the locale files under `guide.items.<id>`:
 // title, why, s1..sN (one per step) and, when `caution` is set, caution. scripts/check-i18n.mjs reads this file.
 
-export type Impact = "big" | "medium" | "small";
-export type Effort = "easy" | "medium" | "careful";
+type Impact = "big" | "medium" | "small";
+type Effort = "easy" | "medium" | "careful";
 export type GuideGroup = "bios" | "hardware" | "drivers" | "windows" | "games";
 
 export interface GuideItem {

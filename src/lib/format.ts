@@ -7,9 +7,8 @@ export const fmtClock = (unixMs: number, lang: string) =>
 
 export const fmtDay = (unixMs: number, lang: string) => new Date(unixMs).toLocaleDateString(lang, { dateStyle: "medium" });
 
-/** Compact form for tight spots ("10/28/26, 3:06 PM"). */
-export const fmtShort = (unixSeconds: number, lang: string) =>
-  new Date(unixSeconds * 1000).toLocaleString(lang, { dateStyle: "short", timeStyle: "short" });
+/** Memory and disk capacities, always in GB: "16 GB", "7.5 GB". */
+export const gb = (bytes: number) => `${(bytes / 2 ** 30).toFixed(bytes < 10 * 2 ** 30 ? 1 : 0)} GB`;
 
 /** File sizes the way people read them: "340 MB", "1.2 GB". */
 export function fmtBytes(bytes: number): string {

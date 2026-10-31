@@ -246,7 +246,7 @@ foreach ($n in ($env:ZANREI_RP -split ',')) { if ([Zanrei.Sr]::SRRemoveRestorePo
     }
 
     fn task_enabled(&self, path: &str) -> Result<Option<bool>> {
-        let mut cache = self.tasks.lock().unwrap_or_else(|e| e.into_inner());
+        let mut cache = self.tasks.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         if cache.as_ref().is_none_or(|(at, _)| at.elapsed() > TASK_CACHE_TTL) {
             let out = powershell(
                 "Get-ScheduledTask | ForEach-Object { \"$($_.TaskPath)$($_.TaskName)|$($_.State)\" }",
@@ -265,7 +265,7 @@ foreach ($n in ($env:ZANREI_RP -split ',')) { if ([Zanrei.Sr]::SRRemoveRestorePo
     }
 
     fn task_set_enabled(&self, path: &str, enabled: bool) -> Result<()> {
-        *self.tasks.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        *self.tasks.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
         self.run(
             "schtasks",
             &["/Change", "/TN", path, if enabled { "/ENABLE" } else { "/DISABLE" }],
