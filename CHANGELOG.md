@@ -4,6 +4,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+### Changed
+- German, Spanish, French, Portuguese, Russian, Chinese, Japanese and Arabic now cover the whole app, including the guide and every setting's description. Before, only the core screens were translated and the rest showed in English.
+
+### Fixed
+- Russian and Arabic showed English for some counts (for example 3 or 5 apps), because their extra plural forms were missing.
+
 ## [0.5.4] - 2026-10-30
 
 ### Fixed

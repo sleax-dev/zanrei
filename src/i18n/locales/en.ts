@@ -523,4 +523,10 @@ const en = {
 
 export default en;
 export type Locale = typeof en;
-export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
+type PluralSuffix = "zero" | "one" | "two" | "few" | "many";
+type PluralForms<K> = K extends `${infer Base}_other` ? `${Base}_${PluralSuffix}` : never;
+/** A complete translation: every English key. A plural needs `_other`; its other forms are the ones the language uses
+ *  (Intl.PluralRules), which scripts/check-i18n.mjs checks. */
+export type Translation<T> = {
+  [K in keyof T as K extends `${string}_one` ? never : K]: T[K] extends object ? Translation<T[K]> : string;
+} & { [K in PluralForms<keyof T>]?: string };

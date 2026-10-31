@@ -70,7 +70,7 @@ A snapshot is one Windows restore point plus a write-ahead journal of every regi
 
 ## Adding a language
 
-Copy `src/i18n/locales/en.ts`, translate it, add `import type { Locale } from "./en"` at the top and `satisfies Locale` at the end (a missing key is a compile error), then add the language to `resources` and `LANGUAGES` in `src/i18n/index.ts`. For right-to-left languages, also add it to `RTL`. Current translations are machine-drafted and welcome review by native speakers.
+Copy `src/i18n/locales/en.ts`, translate it, add `import type { Locale, Translation } from "./en"` at the top and `satisfies Translation<Locale>` at the end (a missing key is a compile error), then add the language to `resources` and `LANGUAGES` in `src/i18n/index.ts`. For right-to-left languages, also add it to `RTL`. A counted text needs every plural form the language uses (`_one`, `_few`, `_many`… per `Intl.PluralRules`); `npm run check:i18n` lists any that are missing. Current translations are machine-drafted and welcome review by native speakers.
 
 ## Adding an operating system
 

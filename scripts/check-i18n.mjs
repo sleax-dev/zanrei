@@ -1,9 +1,9 @@
-// Fails when the UI uses a translation key that English or Turkish lack, or when a tweak has no text.
+// Fails when the UI uses a translation key that a language lacks, when a language is missing an English key or a
+// plural form it needs (Intl.PluralRules), or when a tweak has no text.
 // Run with: node --experimental-strip-types scripts/check-i18n.mjs
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import en from "../src/i18n/locales/en.ts";
-import tr from "../src/i18n/locales/tr.ts";
 import { ATLAS_FACTS, FRESH_GAINS, GROUPS, INSTALL_STEPS, ITEMS } from "../src/guide.ts";
 
 const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
@@ -58,12 +58,23 @@ for (const k of ["site", "docs", "github", "youtube", "win10Ended", "requirement
 const at = (obj, key) => key.split(".").reduce((o, k) => (o && typeof o === "object" ? o[k] : undefined), obj);
 // a key with a count has English plural forms (key_one / key_other); other languages may keep a single form
 const has = (obj, key) => [key, `${key}_other`].some((k) => at(obj, k) !== undefined);
+const flat = (o, p = "") =>
+  Object.entries(o).flatMap(([k, v]) => (typeof v === "object" ? flat(v, `${p}${k}.`) : [`${p}${k}`]));
+// Every English string, with a plural reduced to its base key.
+const enKeys = [...new Set(flat(en).map((k) => k.replace(/_(one|other)$/, "")))];
+const plurals = new Set(flat(en).filter((k) => k.endsWith("_other")).map((k) => k.slice(0, -"_other".length)));
+
+const langs = readdirSync("src/i18n/locales").map((f) => f.replace(/\.ts$/, ""));
 let bad = 0;
-for (const [name, locale] of [["en", en], ["tr", tr]]) {
-  const missing = [...keys].filter((k) => !has(locale, k));
+for (const lang of langs) {
+  const locale = (await import(`../src/i18n/locales/${lang}.ts`)).default;
+  const forms = new Intl.PluralRules(lang).resolvedOptions().pluralCategories;
+  const missing = [...new Set([...keys, ...enKeys])].flatMap((k) =>
+    plurals.has(k) ? forms.map((f) => `${k}_${f}`).filter((pk) => at(locale, pk) === undefined) : has(locale, k) ? [] : [k],
+  );
   if (missing.length) {
     bad += missing.length;
-    console.error(`${name}: ${missing.length} missing\n  ${missing.join("\n  ")}`);
+    console.error(`${lang}: ${missing.length} missing\n  ${missing.join("\n  ")}`);
   }
 }
 const unusedTweaks = Object.keys(en.tweaks).filter((id) => !ids.includes(id));
@@ -71,5 +82,5 @@ if (unusedTweaks.length) {
   bad += unusedTweaks.length;
   console.error(`tweak texts without a catalog entry: ${unusedTweaks.join(", ")}`);
 }
-console.log(`${keys.size} keys, ${ids.length} tweaks checked`);
+console.log(`${langs.length} languages, ${enKeys.length} strings, ${ids.length} tweaks checked`);
 process.exit(bad ? 1 : 0);
