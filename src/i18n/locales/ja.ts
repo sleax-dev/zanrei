@@ -338,6 +338,23 @@ export default {
       "Error": "エラー"
     }
   },
+  "look": {
+    "title": "外観",
+    "accent": "アクセントカラー",
+    "accentDesc": "ボタン、スイッチ、表示中のページを示します。",
+    "custom": "カスタムカラー",
+    "background": "背景画像",
+    "backgroundDesc": "ウィンドウ全体の背景に画像を表示します。",
+    "pick": "画像を選択",
+    "remove": "削除",
+    "blur": "画像をぼかす",
+    "blurDesc": "文字の背後でやわらかく落ち着いた印象に。オフでくっきり表示。",
+    "dim": "暗くする",
+    "dimDesc": "暗いほど文字が読みやすくなります。",
+    "fromPicture": "画像からアクセントを取る",
+    "fromPictureDesc": "上で選んだ色の代わりに画像のメインカラーを使います。",
+    "failed": "このファイルは画像として開けませんでした。"
+  },
   "settings": {
     "general": "全般",
     "language": "言語",

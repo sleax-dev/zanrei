@@ -338,6 +338,23 @@ export default {
       "Error": "错误"
     }
   },
+  "look": {
+    "title": "外观",
+    "accent": "强调色",
+    "accentDesc": "用于按钮、开关和当前页面。",
+    "custom": "自定义颜色",
+    "background": "背景图片",
+    "backgroundDesc": "整个窗口后面的图片。",
+    "pick": "选择图片",
+    "remove": "移除",
+    "blur": "模糊图片",
+    "blurDesc": "在文字后面柔和安静；关闭则清晰显示。",
+    "dim": "调暗",
+    "dimDesc": "越暗文字越容易阅读。",
+    "fromPicture": "从图片取强调色",
+    "fromPictureDesc": "使用图片的主色，而不是上面选的颜色。",
+    "failed": "无法将此文件作为图片打开。"
+  },
   "settings": {
     "general": "常规",
     "language": "语言",

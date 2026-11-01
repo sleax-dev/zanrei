@@ -32,6 +32,26 @@ pub struct Settings {
     pub user_disabled: Vec<String>,
     /// Power plan to restore if the app died while Game Boost was active.
     pub boost_restore_scheme: Option<String>,
+    /// The accent colour, "#rrggbb". Silver from the logo unless the user picks another.
+    pub accent: String,
+    /// With a background picture: blur it, darken it by bg_dim (0 to 0.9), take the accent from it.
+    pub bg_blur: bool,
+    pub bg_dim: f32,
+    pub accent_from_bg: bool,
+}
+
+/// Zanrei's own accent: the silver of the logo.
+pub const DEFAULT_ACCENT: &str = "#d4d8df";
+
+/// "#rrggbb" or the default, and a darkening between 0 and 0.9: what reaches the settings file is always usable.
+pub fn clean_look(accent: &str, dim: f32) -> (String, f32) {
+    let hex = accent.strip_prefix('#').unwrap_or("");
+    let accent = if hex.len() == 6 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        accent.to_ascii_lowercase()
+    } else {
+        DEFAULT_ACCENT.to_string()
+    };
+    (accent, if dim.is_finite() { dim.clamp(0.0, 0.9) } else { 0.45 })
 }
 
 impl Default for Settings {
@@ -46,6 +66,10 @@ impl Default for Settings {
             custom_games: vec![],
             user_disabled: vec![],
             boost_restore_scheme: None,
+            accent: DEFAULT_ACCENT.to_string(),
+            bg_blur: true,
+            bg_dim: 0.45,
+            accent_from_bg: false,
         }
     }
 }

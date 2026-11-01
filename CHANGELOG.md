@@ -4,6 +4,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-01
+
+### Added
+- Appearance in Settings: pick an accent colour from nine presets or any colour of your own; buttons, switches, the page marker and links all follow it.
+- A background picture behind the whole window, blurred or sharp and darkened as much as you like for reading. The accent can follow the picture's main colour.
+
 ## [0.5.5] - 2026-11-01
 
 ### Changed

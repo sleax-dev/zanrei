@@ -1,11 +1,12 @@
-import { Button, ProgressBar, Radio, RadioGroup, Switch } from "@fluentui/react-components";
-import { type ReactNode, useEffect, useState } from "react";
+import { Button, ProgressBar, Radio, RadioGroup, Slider, Switch } from "@fluentui/react-components";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguagePicker } from "../components/LanguagePicker";
 import { api, errorText, type Mode } from "../lib/api";
 import { fmtDateTime } from "../lib/format";
 import { useApp } from "../state";
 import { PageHead } from "../components/PageHead";
+import { ACCENTS, loadPicture } from "../look";
 
 const MODES: { value: Mode; key: "manual" | "recommended" | "auto" }[] = [
   { value: "Manual", key: "manual" },
@@ -27,7 +28,19 @@ function Setting({ title, desc, children }: { title: string; desc?: string; chil
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
-  const { settings, savePrefs, update, checkForUpdate, installUpdate, toast } = useApp();
+  const { settings, savePrefs, picture, setPicture, update, checkForUpdate, installUpdate, toast } = useApp();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const fromPicture = !!picture && settings.accent_from_bg;
+  const isPreset = ACCENTS.includes(settings.accent.toLowerCase());
+
+  const pickPicture = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      await setPicture(await loadPicture(file));
+    } catch {
+      toast(t("look.failed"), "error");
+    }
+  };
   const [autostart, setAutostart] = useState<boolean | null>(null);
 
   useEffect(() => void api.getAutostart().then(setAutostart, () => setAutostart(false)), []);
@@ -61,6 +74,82 @@ export function SettingsPage() {
               {MODES.map((m) => <Radio key={m.value} value={m.value} label={t(`setup.mode.${m.key}.name`)} />)}
             </RadioGroup>
           </div>
+        </div>
+      </section>
+
+      <section className="stack">
+        <div className="sect-head"><h2>{t("look.title")}</h2></div>
+        <div className="rows">
+          <div className="row stackrow">
+            <div className="info">
+              <div className="name">{t("look.accent")}</div>
+              <div className="desc">{t("look.accentDesc")}</div>
+            </div>
+            <div className="swatches" role="radiogroup" aria-label={t("look.accent")}>
+              {ACCENTS.map((c) => (
+                <button
+                  key={c}
+                  className="swatch"
+                  role="radio"
+                  style={{ "--c": c } as CSSProperties}
+                  aria-checked={!fromPicture && settings.accent.toLowerCase() === c}
+                  aria-label={c}
+                  onClick={() => void savePrefs({ accent: c, accent_from_bg: false })}
+                />
+              ))}
+              <label
+                className="swatch custom"
+                role="radio"
+                aria-checked={!isPreset && !fromPicture}
+                title={t("look.custom")}
+                style={{ "--c": isPreset ? "transparent" : settings.accent } as CSSProperties}
+              >
+                <input
+                  type="color"
+                  value={settings.accent}
+                  aria-label={t("look.custom")}
+                  onChange={(e) => void savePrefs({ accent: e.target.value, accent_from_bg: false })}
+                />
+              </label>
+            </div>
+          </div>
+          <Setting title={t("look.background")} desc={t("look.backgroundDesc")}>
+            <div className="picture-row">
+              {picture && <img className="picture-thumb" src={picture} alt="" />}
+              <Button onClick={() => fileInput.current?.click()}>{t("look.pick")}</Button>
+              {picture && <Button appearance="subtle" onClick={() => void setPicture("")}>{t("look.remove")}</Button>}
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  void pickPicture(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          </Setting>
+          {picture && (
+            <>
+              <Setting title={t("look.blur")} desc={t("look.blurDesc")}>
+                <Switch checked={settings.bg_blur} onChange={(_, d) => void savePrefs({ bg_blur: d.checked })} aria-label={t("look.blur")} />
+              </Setting>
+              <Setting title={t("look.dim")} desc={t("look.dimDesc")}>
+                <Slider
+                  min={0}
+                  max={90}
+                  step={5}
+                  value={Math.round(settings.bg_dim * 100)}
+                  onChange={(_, d) => void savePrefs({ bg_dim: d.value / 100 })}
+                  aria-label={t("look.dim")}
+                />
+              </Setting>
+              <Setting title={t("look.fromPicture")} desc={t("look.fromPictureDesc")}>
+                <Switch checked={settings.accent_from_bg} onChange={(_, d) => void savePrefs({ accent_from_bg: d.checked })} aria-label={t("look.fromPicture")} />
+              </Setting>
+            </>
+          )}
         </div>
       </section>
 

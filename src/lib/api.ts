@@ -23,10 +23,17 @@ export interface Settings {
   custom_games: CustomGame[];
   user_disabled: string[];
   boost_restore_scheme: string | null;
+  accent: string;
+  bg_blur: boolean;
+  bg_dim: number;
+  accent_from_bg: boolean;
 }
 
 /** What the UI is allowed to change; the backend owns the rest of Settings. */
-export type Prefs = Pick<Settings, "language" | "setup_done" | "mode" | "run_in_background" | "game_boost" | "auto_update">;
+export type Prefs = Pick<
+  Settings,
+  "language" | "setup_done" | "mode" | "run_in_background" | "game_boost" | "auto_update" | "accent" | "bg_blur" | "bg_dim" | "accent_from_bg"
+>;
 
 export interface Gpu {
   name: string;
@@ -182,6 +189,9 @@ export const api = {
   openSystemRestore: () => invoke<void>("open_system_restore"),
   getSettings: () => invoke<Settings>("get_settings"),
   savePreferences: (prefs: Prefs) => invoke<void>("save_preferences", { prefs }),
+  /** The background picture as a data URL, or "". */
+  getBackground: () => invoke<string>("get_background"),
+  setBackground: (dataUrl: string) => invoke<void>("set_background", { dataUrl }),
   micaEnabled: () => invoke<boolean>("mica_enabled"),
   minimizeWindow: () => invoke<void>("minimize_window"),
   closeWindow: () => invoke<void>("close_window"),
@@ -228,6 +238,10 @@ export const DEFAULT_SETTINGS: Settings = {
   custom_games: [],
   user_disabled: [],
   boost_restore_scheme: null,
+  accent: "#d4d8df",
+  bg_blur: true,
+  bg_dim: 0.45,
+  accent_from_bg: false,
 };
 
 export function errorText(e: unknown): string {

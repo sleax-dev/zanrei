@@ -362,6 +362,23 @@ export default {
       "Error": "Erros"
     }
   },
+  "look": {
+    "title": "Aparência",
+    "accent": "Cor de destaque",
+    "accentDesc": "Marca botões, chaves e a página em que você está.",
+    "custom": "Cor personalizada",
+    "background": "Imagem de fundo",
+    "backgroundDesc": "Uma imagem atrás da janela inteira.",
+    "pick": "Escolher imagem",
+    "remove": "Remover",
+    "blur": "Desfocar a imagem",
+    "blurDesc": "Suave e calma atrás do texto; sem desfoque fica nítida.",
+    "dim": "Escurecer",
+    "dimDesc": "Quanto mais, mais fácil ler o texto.",
+    "fromPicture": "Destaque da imagem",
+    "fromPictureDesc": "Usa a cor principal da imagem em vez da de cima.",
+    "failed": "Não foi possível abrir este arquivo como imagem."
+  },
   "settings": {
     "general": "Geral",
     "language": "Idioma",

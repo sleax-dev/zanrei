@@ -8,6 +8,7 @@
   --text: #eef0f3;
   --muted: #a9aeb8;
   --accent: #d4d8df;
+  --accent-rgb: 212 216 223; /* the accent as "r g b" for tints; look.ts keeps both in step */
   --ok: #3ddc97;
   --warn: #ffc94d;
   --bad: #ff6b6b;
@@ -26,7 +27,7 @@ body { user-select: none; cursor: default; overscroll-behavior: none; }
 input, textarea, .selectable { user-select: text; cursor: text; }
 img, svg { -webkit-user-drag: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-::selection { background: rgba(212, 216, 223, 0.28); color: var(--text); }
+::selection { background: rgb(var(--accent-rgb) / 0.28); color: var(--text); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
@@ -74,7 +75,7 @@ button { font: inherit; }
 .boost-state .value { color: var(--text); font-weight: 600; }
 .boost-state .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); opacity: 0.5; flex-shrink: 0; }
 .boost-state .dot.on { background: var(--accent); opacity: 1; }
-.boost-state .dot.live { box-shadow: 0 0 0 3px rgba(212, 216, 223, 0.25); }
+.boost-state .dot.live { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.25); }
 
 .update-chip {
   display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);
@@ -297,7 +298,7 @@ button { font: inherit; }
 .g-steps li::marker { color: var(--accent); font-weight: 600; }
 .g-caution { margin: 0; padding: 8px 12px; border-radius: 8px; background: rgba(255, 201, 77, 0.08); border: 1px solid rgba(255, 201, 77, 0.25); color: var(--text) !important; font-size: 13px; }
 .g-list { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 5px; }
-.g-atlas { border-color: rgba(212, 216, 223, 0.28); }
+.g-atlas { border-color: rgb(var(--accent-rgb) / 0.28); }
 .g-flow { list-style: none; counter-reset: step; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .g-flow > li { counter-increment: step; display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
 .g-flow > li::before { content: counter(step); display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; color: #0a0a0c; background: var(--silver); }
@@ -311,3 +312,20 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---- a background picture: behind everything, blurred or sharp, darkened for reading. The surfaces turn into
+   dark glass over it (no backdrop-filter: the picture is blurred once, not under every panel on every frame). */
+.has-picture { --surface: rgb(14 15 18 / 0.62); --surface-2: rgb(34 36 41 / 0.7); }
+.has-picture .app-bg { position: relative; isolation: isolate; background: #000; }
+.has-picture .app-bg::before { content: ""; position: absolute; inset: -64px; z-index: -2; background: var(--bg-image) center / cover no-repeat; filter: blur(var(--bg-blur, 0px)); }
+.has-picture .app-bg::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgb(8 9 10 / var(--bg-dim, 0.45)); }
+
+/* ---- appearance: colour swatches and the picture */
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.swatch { position: relative; width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0; background: var(--c); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.15); transition: transform 0.12s var(--ease); cursor: pointer; }
+.swatch:hover { transform: scale(1.1); }
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--c); }
+.swatch.custom { background: conic-gradient(#ff6b6b, #ffd166, #5ee08b, #6aa8ff, #9d8cff, #ff7eb6, #ff6b6b); overflow: hidden; }
+.swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.picture-row { display: flex; gap: 12px; align-items: center; }
+.picture-thumb { width: 88px; height: 56px; border-radius: 8px; object-fit: cover; box-shadow: inset 0 0 0 1px var(--border); flex-shrink: 0; }

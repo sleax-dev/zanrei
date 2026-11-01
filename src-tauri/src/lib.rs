@@ -322,6 +322,10 @@ struct Preferences {
     run_in_background: bool,
     game_boost: bool,
     auto_update: bool,
+    accent: String,
+    bg_blur: bool,
+    bg_dim: f32,
+    accent_from_bg: bool,
 }
 
 async fn with<T: Send + 'static>(
@@ -656,6 +660,9 @@ async fn save_preferences(app: AppHandle, s: State<'_, AppState>, prefs: Prefere
             st.run_in_background = prefs.run_in_background;
             st.game_boost = prefs.game_boost;
             st.auto_update = prefs.auto_update;
+            (st.accent, st.bg_dim) = zanrei_core::settings::clean_look(&prefs.accent, prefs.bg_dim);
+            st.bg_blur = prefs.bg_blur;
+            st.accent_from_bg = prefs.accent_from_bg;
         })
         .map(|_| ())
     })
@@ -664,6 +671,33 @@ async fn save_preferences(app: AppHandle, s: State<'_, AppState>, prefs: Prefere
         refresh_tray_menu(&app, new_lang.as_deref().unwrap_or("en"));
     }
     Ok(())
+}
+
+/// The background picture, kept next to settings.json as the data URL the page made it into.
+fn background_file(s: &State<'_, AppState>) -> std::path::PathBuf {
+    s.0.dir.join("background.txt")
+}
+
+/// The picture as a data URL, or "" when there is none.
+#[tauri::command]
+fn get_background(s: State<'_, AppState>) -> String {
+    std::fs::read_to_string(background_file(&s)).unwrap_or_default()
+}
+
+/// Saves the picture ("" removes it). Only a JPEG data URL from the page, at most 12 MB.
+#[tauri::command]
+fn set_background(s: State<'_, AppState>, data_url: String) -> Res<()> {
+    let path = background_file(&s);
+    if data_url.is_empty() {
+        return match std::fs::remove_file(&path) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.to_string()),
+            _ => Ok(()),
+        };
+    }
+    if !data_url.starts_with("data:image/jpeg;base64,") || data_url.len() > 12 << 20 {
+        return Err("not a picture".to_string());
+    }
+    std::fs::write(path, data_url).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -1249,6 +1283,8 @@ pub fn run() {
             get_settings,
             save_preferences,
             mica_enabled,
+            get_background,
+            set_background,
             get_autostart,
             set_autostart,
             minimize_window,

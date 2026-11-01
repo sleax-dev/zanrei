@@ -17,6 +17,9 @@ export interface Toast {
 interface AppCtx {
   settings: Settings;
   savePrefs: (patch: Partial<Prefs>) => Promise<void>;
+  /** The background picture as a data URL, or "". */
+  picture: string;
+  setPicture: (dataUrl: string) => Promise<void>;
   mica: boolean;
   page: Page;
   setPage: (p: Page) => void;
@@ -61,6 +64,7 @@ export function AppProvider({ initial, children }: { initial: Settings; children
   const { t } = useTranslation();
   const [settings, setSettings] = useState(initial);
   const [mica, setMica] = useState(false);
+  const [picture, setPictureState] = useState("");
   const [page, setPage] = useState<Page>("overview");
   const [system, setSystem] = useState<SystemInfo | null>(null);
   const [tweaks, setTweaks] = useState<TweakInfo[] | null>(null);
@@ -99,12 +103,29 @@ export function AppProvider({ initial, children }: { initial: Settings; children
           run_in_background: next.run_in_background,
           game_boost: next.game_boost,
           auto_update: next.auto_update,
+          accent: next.accent,
+          bg_blur: next.bg_blur,
+          bg_dim: next.bg_dim,
+          accent_from_bg: next.accent_from_bg,
         });
       } catch (e) {
         toast(errorText(e), "error");
       }
     },
     [settings, toast],
+  );
+
+  useEffect(() => void api.getBackground().then(setPictureState, () => {}), []);
+  const setPicture = useCallback(
+    async (dataUrl: string) => {
+      try {
+        await api.setBackground(dataUrl);
+        setPictureState(dataUrl);
+      } catch (e) {
+        toast(errorText(e), "error");
+      }
+    },
+    [toast],
   );
 
   const refreshPending = useCallback(async () => {
@@ -219,11 +240,11 @@ export function AppProvider({ initial, children }: { initial: Settings; children
 
   const value = useMemo<AppCtx>(
     () => ({
-      settings, savePrefs, mica, page, setPage, system, tweaks, busy, reloadTweaks, setTweak, applyRecommended, applying,
+      settings, savePrefs, picture, setPicture, mica, page, setPage, system, tweaks, busy, reloadTweaks, setTweak, applyRecommended, applying,
       pending, restartCauses, refreshPending, snapshots, reloadSnapshots, boost, update, checkForUpdate, installUpdate,
       logs, unseenErrors, clearLogs, toasts, toast, dismissToast,
     }),
-    [settings, savePrefs, mica, page, system, tweaks, busy, reloadTweaks, setTweak, applyRecommended, applying, pending,
+    [settings, savePrefs, picture, setPicture, mica, page, system, tweaks, busy, reloadTweaks, setTweak, applyRecommended, applying, pending,
       restartCauses, refreshPending, snapshots, reloadSnapshots, boost, update, checkForUpdate, installUpdate, logs,
       unseenErrors, clearLogs, toasts, toast, dismissToast],
   );

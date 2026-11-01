@@ -350,6 +350,23 @@ export default {
       "Error": "Fehler"
     }
   },
+  "look": {
+    "title": "Aussehen",
+    "accent": "Akzentfarbe",
+    "accentDesc": "Markiert Schaltflächen, Schalter und die aktuelle Seite.",
+    "custom": "Eigene Farbe",
+    "background": "Hintergrundbild",
+    "backgroundDesc": "Ein Bild hinter dem ganzen Fenster.",
+    "pick": "Bild wählen",
+    "remove": "Entfernen",
+    "blur": "Bild weichzeichnen",
+    "blurDesc": "Weich und ruhig hinter dem Text; aus zeigt es scharf.",
+    "dim": "Abdunkeln",
+    "dimDesc": "Mehr macht den Text leichter lesbar.",
+    "fromPicture": "Akzent aus dem Bild",
+    "fromPictureDesc": "Nimmt die Hauptfarbe des Bildes statt der Farbe oben.",
+    "failed": "Diese Datei ließ sich nicht als Bild öffnen."
+  },
   "settings": {
     "general": "Allgemein",
     "language": "Sprache",

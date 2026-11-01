@@ -362,6 +362,23 @@ export default {
       "Error": "Erreurs"
     }
   },
+  "look": {
+    "title": "Apparence",
+    "accent": "Couleur d'accent",
+    "accentDesc": "Marque les boutons, les interrupteurs et la page affichée.",
+    "custom": "Couleur personnalisée",
+    "background": "Image de fond",
+    "backgroundDesc": "Une image derrière toute la fenêtre.",
+    "pick": "Choisir une image",
+    "remove": "Retirer",
+    "blur": "Flouter l'image",
+    "blurDesc": "Douce et calme derrière le texte ; sans flou elle reste nette.",
+    "dim": "Assombrir",
+    "dimDesc": "Plus c'est sombre, plus le texte est lisible.",
+    "fromPicture": "Accent tiré de l'image",
+    "fromPictureDesc": "Utilise la couleur principale de l'image au lieu de celle du dessus.",
+    "failed": "Ce fichier n'a pas pu être ouvert comme image."
+  },
   "settings": {
     "general": "Général",
     "language": "Langue",
