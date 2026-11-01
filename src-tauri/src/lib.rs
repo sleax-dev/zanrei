@@ -7,7 +7,7 @@ use std::{
     sync::{Arc, Mutex, MutexGuard, OnceLock},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
-use sysinfo::{Disks, ProcessRefreshKind, ProcessesToUpdate, System};
+use sysinfo::{Disks, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 use tauri::{
     AppHandle, Emitter, LogicalSize, Manager, RunEvent, State, WindowEvent,
     menu::{Menu, MenuItem},
@@ -41,7 +41,7 @@ struct Inner {
     store: Store,
     dir: PathBuf,
     /// Mica only exists on Windows 11; on 10 the UI falls back to a solid background.
-    mica: bool,
+    mica: std::sync::atomic::AtomicBool,
     /// Serialises everything that changes the system, so journal files are never written concurrently.
     change_lock: Mutex<()>,
     settings: Mutex<Settings>,
@@ -668,7 +668,7 @@ async fn save_preferences(app: AppHandle, s: State<'_, AppState>, prefs: Prefere
 
 #[tauri::command]
 fn mica_enabled(s: State<'_, AppState>) -> bool {
-    s.0.mica
+    s.0.mica.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 #[tauri::command]
@@ -736,12 +736,84 @@ fn open_log_folder(app: AppHandle, s: State<'_, AppState>) -> Res<()> {
 
 // ---- window, tray
 
+/// Shows the window, building it first when it does not exist. In background mode closing the window
+/// destroys it, so its WebView gives back its memory while Zanrei waits in the tray.
 fn show_main(app: &AppHandle) {
-    if let Some(w) = app.get_webview_window("main") {
+    let window = match app.get_webview_window("main") {
+        Some(w) => Some(w),
+        None => create_main(app)
+            .map_err(|e| {
+                if let Some(state) = app.try_state::<AppState>() {
+                    state.0.log(Level::Error, "app", format!("window: {e}"));
+                }
+            })
+            .ok(),
+    };
+    if let Some(w) = window {
         let _ = w.show();
         let _ = w.unminimize();
         let _ = w.set_focus();
     }
+}
+
+/// Builds the window from tauri.conf.json, sized to fit small screens, with Mica where Windows has it.
+fn create_main(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == "main")
+        .cloned()
+        .ok_or(tauri::Error::WindowNotFound)?;
+    let w = tauri::WebviewWindowBuilder::from_config(app, &config)?.build()?;
+    // The window cannot be resized by hand, so make sure the fixed size fits small screens (1366x768 at 125 %).
+    if let Ok(Some(m)) = w
+        .current_monitor()
+        .map(|m| m.or_else(|| w.primary_monitor().ok().flatten()))
+    {
+        let screen = m.size().to_logical::<f64>(m.scale_factor());
+        let fit = LogicalSize::new(1120f64.min(screen.width - 48.0), 740f64.min(screen.height - 96.0));
+        let _ = w.set_size(fit);
+        let _ = w.center();
+    }
+    let mica = w
+        .set_effects(EffectsBuilder::new().effect(Effect::Mica).build())
+        .is_ok();
+    if let Some(state) = app.try_state::<AppState>() {
+        state.0.mica.store(mica, std::sync::atomic::Ordering::Relaxed);
+    }
+    efficiency_mode(false);
+    Ok(w)
+}
+
+/// Windows "efficiency mode" (EcoQoS) while only the tray is left: the scheduler keeps Zanrei on efficient
+/// cores at low clock speeds. Game Boost checks every few seconds and never notices the difference.
+fn efficiency_mode(on: bool) {
+    #[cfg(windows)]
+    unsafe {
+        use windows_sys::Win32::System::Threading::{
+            GetCurrentProcess, PROCESS_POWER_THROTTLING_CURRENT_VERSION, PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+            PROCESS_POWER_THROTTLING_STATE, ProcessPowerThrottling, SetProcessInformation,
+        };
+        let state = PROCESS_POWER_THROTTLING_STATE {
+            Version: PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+            ControlMask: PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+            StateMask: if on {
+                PROCESS_POWER_THROTTLING_EXECUTION_SPEED
+            } else {
+                0
+            },
+        };
+        SetProcessInformation(
+            GetCurrentProcess(),
+            ProcessPowerThrottling,
+            &state as *const _ as *const _,
+            std::mem::size_of::<PROCESS_POWER_THROTTLING_STATE>() as u32,
+        );
+    }
+    #[cfg(not(windows))]
+    let _ = on;
 }
 
 /// (open, exit) in the UI language.
@@ -1035,7 +1107,12 @@ fn spawn_boost_watcher(app: AppHandle, state: AppState) {
                 watch = games::watch(&s.refresh_games());
                 scanned = Some(Instant::now());
             }
-            sys.refresh_processes(ProcessesToUpdate::All, true);
+            // Names and paths are all the watch needs: no CPU, memory or disk figures for every process.
+            sys.refresh_processes_specifics(
+                ProcessesToUpdate::All,
+                true,
+                ProcessRefreshKind::nothing().with_exe(UpdateKind::OnlyIfNotSet),
+            );
             let running = watch.running(sys.processes().values().map(|p| {
                 (
                     p.name().to_string_lossy().into_owned(),
@@ -1059,23 +1136,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
-            let window = app.get_webview_window("main");
-            // The window cannot be resized by hand, so make sure the fixed size fits small screens (1366x768 at 125 %).
-            if let Some(w) = &window
-                && let Ok(Some(m)) = w
-                    .current_monitor()
-                    .map(|m| m.or_else(|| w.primary_monitor().ok().flatten()))
-            {
-                let screen = m.size().to_logical::<f64>(m.scale_factor());
-                let fit = LogicalSize::new(1120f64.min(screen.width - 48.0), 740f64.min(screen.height - 96.0));
-                let _ = w.set_size(fit);
-                let _ = w.center();
-            }
-            let mica = window.as_ref().is_some_and(|w| {
-                w.set_effects(EffectsBuilder::new().effect(Effect::Mica).build())
-                    .is_ok()
-            });
-
             let dir = app.path().app_data_dir()?;
             let loaded = settings::load(&dir);
             let log_dir = dir.join("logs");
@@ -1083,7 +1143,7 @@ pub fn run() {
                 platform: platform::current(),
                 store: Store::new(dir.clone()),
                 dir,
-                mica,
+                mica: std::sync::atomic::AtomicBool::new(false),
                 change_lock: Mutex::new(()),
                 settings: Mutex::new(loaded.clone()),
                 session: Mutex::new(None),
@@ -1128,6 +1188,8 @@ pub fn run() {
             // Started by the logon task: stay out of the way, but never hide the first-run wizard.
             if !(background && loaded.setup_done && loaded.run_in_background) {
                 show_main(app.handle());
+            } else {
+                efficiency_mode(true);
             }
 
             spawn_boost_watcher(app.handle().clone(), state.clone());
@@ -1142,17 +1204,18 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
+            if let WindowEvent::CloseRequested { .. } = event {
                 // The close button, Alt+F4 and the taskbar menu all land here. Before setup is finished there is
                 // nothing running in the background yet, so closing then really exits.
-                let hide = {
+                let background = {
                     let state = window.state::<AppState>();
                     let st = lock(&state.0.settings);
                     st.run_in_background && st.setup_done
                 };
-                if hide {
-                    api.prevent_close();
-                    let _ = window.hide();
+                // In background mode the window really closes (and its WebView with it); RunEvent::ExitRequested
+                // below keeps the app running in the tray.
+                if background {
+                    efficiency_mode(true);
                 }
             }
         })
@@ -1201,6 +1264,16 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building Zanrei")
         .run(|app, event| {
+            // The last window closing (code None) ends the app only when background mode is off; Exit in the
+            // tray menu and quit_app pass a code and always end it.
+            if let RunEvent::ExitRequested { api, code: None, .. } = &event
+                && let Some(state) = app.try_state::<AppState>()
+            {
+                let st = lock(&state.0.settings);
+                if st.run_in_background && st.setup_done {
+                    api.prevent_exit();
+                }
+            }
             if let RunEvent::Exit = event
                 && let Some(state) = app.try_state::<AppState>()
             {

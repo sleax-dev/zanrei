@@ -4,7 +4,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-11-01
+
 ### Changed
+- Lighter in the background. With "Run in the background" on, closing the window now closes its web view too, which frees around 100 MB or more until you open Zanrei again from the tray; started at sign-in, Zanrei no longer loads the window at all until it is opened.
+- While only the tray is left, Zanrei runs in Windows efficiency mode, so its few checks run on efficient cores at low clock speeds.
+- Game Boost reads only the names and paths of running programs when it checks for games, instead of their CPU, memory and disk figures.
 - German, Spanish, French, Portuguese, Russian, Chinese, Japanese and Arabic now cover the whole app, including the guide and every setting's description. Before, only the core screens were translated and the rest showed in English.
 
 ### Fixed

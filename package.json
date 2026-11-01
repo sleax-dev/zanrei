@@ -2,7 +2,7 @@
   "name": "zanrei",
   "private": true,
   "description": "Windows optimization with a mandatory undo.",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,6 +1,6 @@
 [package]
 name = "zanrei"
-version = "0.5.4"
+version = "0.5.5"
 edition = "2024"
 description = "Zanrei - Windows optimization with a mandatory undo."
 
@@ -24,6 +24,9 @@ tauri-plugin-process = "2.4.0"
 tauri-plugin-single-instance = "2.5.5"
 tauri-plugin-updater = { version = "2.14.1", optional = true }
 zanrei-core = { path = "../crates/core" }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
 
 [build-dependencies]
 tauri-build = "2.7.4"

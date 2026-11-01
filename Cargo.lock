@@ -5325,7 +5325,7 @@ dependencies = [
 
 [[package]]
 name = "zanrei"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -5339,12 +5339,13 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "tempfile",
+ "windows-sys 0.61.2",
  "zanrei-core",
 ]
 
 [[package]]
 name = "zanrei-core"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "serde",
  "serde_json",
