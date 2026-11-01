@@ -1,4 +1,5 @@
 mod logs;
+mod stats;
 
 use logs::{Level, Logger};
 use serde::{Deserialize, Serialize};
@@ -322,6 +323,7 @@ struct Preferences {
     run_in_background: bool,
     game_boost: bool,
     auto_update: bool,
+    usage_stats: bool,
     accent: String,
     bg_blur: bool,
     bg_dim: f32,
@@ -660,6 +662,7 @@ async fn save_preferences(app: AppHandle, s: State<'_, AppState>, prefs: Prefere
             st.run_in_background = prefs.run_in_background;
             st.game_boost = prefs.game_boost;
             st.auto_update = prefs.auto_update;
+            st.usage_stats = prefs.usage_stats;
             (st.accent, st.bg_dim) = zanrei_core::settings::clean_look(&prefs.accent, prefs.bg_dim);
             st.bg_blur = prefs.bg_blur;
             st.accent_from_bg = prefs.accent_from_bg;
@@ -1228,6 +1231,10 @@ pub fn run() {
 
             spawn_boost_watcher(app.handle().clone(), state.clone());
             spawn_updater(app.handle().clone(), state.clone());
+            {
+                let s = state.clone();
+                stats::start(&s.0.dir.clone(), move || lock(&s.0.settings).usage_stats);
+            }
 
             if loaded.setup_done && loaded.mode == Mode::Auto {
                 let s = state;
@@ -1296,6 +1303,7 @@ pub fn run() {
             update_status,
             check_update,
             install_update,
+            stats::app_stats,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Zanrei")

@@ -30,7 +30,7 @@ Zanrei reads your PC's hardware, suggests what is worth changing, and creates a 
 - **Restore.** Undo any snapshot, delete old ones, or open Windows System Restore.
 - **Guide.** The steps no app can do for you (BIOS memory profile, Resizable BAR, drivers, hardware) and how to reinstall Windows cleanly.
 - **Knows your Windows.** Recognizes AtlasOS and ReviOS and adjusts its advice.
-- **Updates itself** from signed releases. Ten languages. No account, no telemetry.
+- **Updates itself** from signed releases. Ten languages. No account, no tracking: the only thing sent is a random ID every 5 minutes to `stats.sleax.dev` for the live user count, which Settings → Community turns off.
 
 <table>
   <tr>

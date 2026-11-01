@@ -2,7 +2,7 @@ import { Button, ProgressBar, Radio, RadioGroup, Slider, Switch } from "@fluentu
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguagePicker } from "../components/LanguagePicker";
-import { api, errorText, type Mode } from "../lib/api";
+import { api, type AppStats, errorText, type Mode } from "../lib/api";
 import { fmtDateTime } from "../lib/format";
 import { useApp } from "../state";
 import { PageHead } from "../components/PageHead";
@@ -30,6 +30,28 @@ export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { settings, savePrefs, picture, setPicture, update, checkForUpdate, installUpdate, toast } = useApp();
   const fileInput = useRef<HTMLInputElement>(null);
+  // Live numbers from stats.sleax.dev, refreshed while the page is open.
+  const [stats, setStats] = useState<AppStats | null>(null);
+  const [statsFailed, setStatsFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      api.appStats().then(
+        (s) => {
+          if (alive) (setStats(s), setStatsFailed(false));
+        },
+        () => {
+          if (alive) setStatsFailed(true);
+        },
+      );
+    void load();
+    const timer = setInterval(load, 30_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, []);
+  const num = (n: number) => new Intl.NumberFormat(i18n.language).format(n ?? 0);
   const fromPicture = !!picture && settings.accent_from_bg;
   const isPreset = ACCENTS.includes(settings.accent.toLowerCase());
 
@@ -161,6 +183,22 @@ export function SettingsPage() {
           </Setting>
           <Setting title={t("settings.startWithWindows")} desc={t("settings.startWithWindowsDesc")}>
             <Switch checked={autostart ?? false} disabled={autostart === null} onChange={(_, d) => void toggleAutostart(d.checked)} aria-label={t("settings.startWithWindows")} />
+          </Setting>
+        </div>
+      </section>
+
+      <section className="stack">
+        <div className="sect-head"><h2>{t("settings.community")}</h2></div>
+        <div className="rows">
+          <div className="row">
+            <div className="info">
+              <div className="name">
+                {stats ? <><span className="live-dot" aria-hidden="true" />{t("settings.liveNow", { n: num(stats.live) })}</> : statsFailed ? t("settings.statsError") : "…"}
+              </div>
+            </div>
+          </div>
+          <Setting title={t("settings.usageStats")} desc={t("settings.usageStatsDesc")}>
+            <Switch checked={settings.usage_stats} onChange={(_, d) => void savePrefs({ usage_stats: d.checked })} aria-label={t("settings.usageStats")} />
           </Setting>
         </div>
       </section>

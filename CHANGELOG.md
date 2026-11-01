@@ -4,6 +4,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-01
+
+### Added
+- Settings → Community shows how many people are using Zanrei right now. To be counted, Zanrei sends an anonymous random ID every 5 minutes, nothing else; turn off "Count me as online" to stop it.
+
 ## [0.6.1] - 2026-11-01
 
 ### Fixed

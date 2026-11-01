@@ -329,3 +329,6 @@ button { font: inherit; }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .picture-row { display: flex; gap: 12px; align-items: center; }
 .picture-thumb { width: 88px; height: 56px; border-radius: 8px; object-fit: cover; box-shadow: inset 0 0 0 1px var(--border); flex-shrink: 0; }
+
+/* Community: the live dot beside "N online now" */
+.live-dot { display: inline-block; width: 8px; height: 8px; margin-inline-end: 8px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 0 3px rgb(61 220 132 / 0.18); vertical-align: 1px; }

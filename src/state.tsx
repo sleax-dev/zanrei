@@ -103,6 +103,7 @@ export function AppProvider({ initial, children }: { initial: Settings; children
           run_in_background: next.run_in_background,
           game_boost: next.game_boost,
           auto_update: next.auto_update,
+          usage_stats: next.usage_stats,
           accent: next.accent,
           bg_blur: next.bg_blur,
           bg_dim: next.bg_dim,

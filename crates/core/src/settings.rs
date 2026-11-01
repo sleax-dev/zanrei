@@ -27,6 +27,8 @@ pub struct Settings {
     pub game_boost: bool,
     /// Check for updates in the background and offer to install them.
     pub auto_update: bool,
+    /// Counted in the live user count on sleax.dev: a random id every 5 minutes, nothing else.
+    pub usage_stats: bool,
     pub custom_games: Vec<CustomGame>,
     /// Tweaks the user switched off by hand; Automatic mode never re-applies them.
     pub user_disabled: Vec<String>,
@@ -63,6 +65,7 @@ impl Default for Settings {
             run_in_background: true,
             game_boost: true,
             auto_update: true,
+            usage_stats: true,
             custom_games: vec![],
             user_disabled: vec![],
             boost_restore_scheme: None,

@@ -20,6 +20,7 @@ export interface Settings {
   run_in_background: boolean;
   game_boost: boolean;
   auto_update: boolean;
+  usage_stats: boolean;
   custom_games: CustomGame[];
   user_disabled: string[];
   boost_restore_scheme: string | null;
@@ -29,10 +30,14 @@ export interface Settings {
   accent_from_bg: boolean;
 }
 
+export interface AppStats {
+  live: number;
+}
+
 /** What the UI is allowed to change; the backend owns the rest of Settings. */
 export type Prefs = Pick<
   Settings,
-  "language" | "setup_done" | "mode" | "run_in_background" | "game_boost" | "auto_update" | "accent" | "bg_blur" | "bg_dim" | "accent_from_bg"
+  "language" | "setup_done" | "mode" | "run_in_background" | "game_boost" | "auto_update" | "usage_stats" | "accent" | "bg_blur" | "bg_dim" | "accent_from_bg"
 >;
 
 export interface Gpu {
@@ -196,6 +201,8 @@ export const api = {
   minimizeWindow: () => invoke<void>("minimize_window"),
   closeWindow: () => invoke<void>("close_window"),
   quitApp: () => invoke<void>("quit_app"),
+  /** Live users, from stats.sleax.dev. */
+  appStats: () => invoke<AppStats>("app_stats"),
   getAutostart: () => invoke<boolean>("get_autostart"),
   setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
   listTweaks: () => invoke<TweakInfo[]>("list_tweaks"),
@@ -235,6 +242,7 @@ export const DEFAULT_SETTINGS: Settings = {
   run_in_background: true,
   game_boost: true,
   auto_update: true,
+  usage_stats: true,
   custom_games: [],
   user_disabled: [],
   boost_restore_scheme: null,
