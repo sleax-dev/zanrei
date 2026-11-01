@@ -4,6 +4,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versio
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-01
+
+### Fixed
+- Choosing a background picture said the file could not be opened as a picture, whatever the file.
+
 ## [0.6.0] - 2026-11-01
 
 ### Added

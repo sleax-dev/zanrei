@@ -133,20 +133,22 @@ async function pictureAccent(src: string): Promise<Rgb | null> {
   return best.sum.map((v) => v / best.weight) as Rgb;
 }
 
-/** Reads a picture the user picked and shrinks it to at most 2560 px: a few hundred KB of JPEG. */
+/** Reads a picture the user picked and shrinks it to at most 2560 px: a few hundred KB of JPEG.
+ *  Read as a data: URL, not a blob: one, because the page's CSP allows images only from data: (and itself). */
 export async function loadPicture(file: File): Promise<string> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    const scale = Math.min(1, 2560 / Math.max(img.naturalWidth, img.naturalHeight));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(img.naturalWidth * scale);
-    canvas.height = Math.round(img.naturalHeight * scale);
-    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.88);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const source = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+  const img = new Image();
+  img.src = source;
+  await img.decode();
+  const scale = Math.min(1, 2560 / Math.max(img.naturalWidth, img.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.88);
 }
