@@ -44,9 +44,11 @@ zanrei/
 │       ├── restore.rs    Snapshots and the write-ahead journal
 │       ├── games.rs      Launcher detection and per-game settings
 │       ├── startup.rs, cleanup.rs, system.rs, power.rs, settings.rs
+│       └── autostart.rs  "Start with Windows" as a logon task; kv.rs parses packed setting strings
 ├── src-tauri/            Tauri 2 shell: commands, window, tray, updater, installer
+│   └── src/              lib.rs, logs.rs (activity log and its file), stats.rs (live user count)
 ├── src/                  UI: React 19, TypeScript, Fluent UI v9, Motion
-│   ├── pages/, components/, i18n/ (en.ts and tr.ts are complete)
+│   ├── pages/, components/, i18n/ (ten languages, all complete)
 │   └── guide.ts          Data for the Guide page
 ├── docs/                 Research notes and the README screenshots
 └── .github/workflows/    Tests and release build

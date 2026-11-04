@@ -30,6 +30,8 @@ Zanrei reads your PC's hardware, suggests what is worth changing, and creates a 
 - **Restore.** Undo any snapshot, delete old ones, or open Windows System Restore.
 - **Guide.** The steps no app can do for you (BIOS memory profile, Resizable BAR, drivers, hardware) and how to reinstall Windows cleanly.
 - **Knows your Windows.** Recognizes AtlasOS and ReviOS and adjusts its advice.
+- **Make it yours.** Pick an accent colour from the presets or any colour of your own, put a picture behind the window, blurred or sharp and darkened as much as you like, and let the accent follow the picture.
+- **Light in the background.** Closing the window frees its web view, started at sign-in it loads no window until you open it, and while only the tray is left it runs in Windows efficiency mode.
 - **Updates itself** from signed releases. Ten languages. No account, no tracking: the only thing sent is a random ID every 5 minutes to `stats.sleax.dev` for the live user count, which Settings → Community turns off.
 
 <table>
@@ -60,7 +62,7 @@ Requires Windows 10 or 11.
 - **Irreversible actions say so.** Removing Edge, removing built-in apps, disk cleanup and deleting restore points are marked, never run as part of "apply all" or automatic mode, and the first two ask for an explicit acknowledgement.
 - **Three automation levels.** Manual, Recommended (default) and Automatic. Automatic only applies safe settings and never anything you switched off by hand.
 
-Zanrei contacts the internet only to check for updates on GitHub, to download WebView2 if needed, and when you open a link.
+Zanrei contacts the internet only to check for updates on GitHub, to download WebView2 if needed, when you open a link, and, while "Count me as online" is on, to send `stats.sleax.dev` its random ID every 5 minutes for the live user count.
 
 ## Build from source
 
