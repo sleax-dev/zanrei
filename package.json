@@ -11,15 +11,15 @@
     "check:i18n": "node --experimental-strip-types scripts/check-i18n.mjs"
   },
   "dependencies": {
-    "@fluentui/react-components": "^9.75.0",
-    "@fluentui/react-icons": "^2.0.344",
+    "@fluentui/react-components": "^9.75.2",
+    "@fluentui/react-icons": "^2.0.346",
     "@fontsource-variable/inter": "^5.3.0",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-dialog": "^2.8.4",
-    "@tauri-apps/plugin-opener": "^2.7.2",
+    "@tauri-apps/plugin-opener": "^2.7.3",
     "@tauri-apps/plugin-os": "^2.4.0",
     "i18next": "^26.5.11",
-    "motion": "^14.7.1",
+    "motion": "^14.14.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-i18next": "^17.1.9"
@@ -28,8 +28,8 @@
     "@tauri-apps/cli": "^2.12.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-react": "^6.3.0",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.8"
   }
 }
